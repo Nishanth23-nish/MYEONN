@@ -1,0 +1,10 @@
+[
+  {
+    "id": "admin-1",
+    "name": "Myeonn Admin",
+    "email": "myeonnadmin@gmail.com",
+    "passwordHash": "3ac56083d989c4b3e8b987ff03f8d9e9:dd7762d40561c606ca04b91e4607266c98612331c9d1b41d6a029c03d48d28e7315980878889a5a21d6c7b14938951f9b5d54d9aa2e3e71ce205fc8e879d0052",
+    "role": "admin",
+    "createdAt": "2026-09-13T00:00:00.000Z"
+  }
+]

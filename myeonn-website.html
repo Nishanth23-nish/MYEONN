@@ -1,0 +1,1369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Myeonn — Clothing for Kids &amp; Men</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#F9F6F1;color:#1A1714;overflow-x:hidden;}
+a{text-decoration:none;color:inherit;cursor:pointer;}
+button{cursor:pointer;font-family:inherit;}
+
+/* ── PAGES ── */
+.page{display:none;min-height:100vh;flex-direction:column;}
+.page.active{display:flex;}
+
+/* ── NAV ── */
+nav{background:#0A0A0A;padding:0 48px;display:flex;align-items:center;justify-content:space-between;height:64px;position:sticky;top:0;z-index:200;}
+.nav-logo{font-size:18px;font-weight:500;letter-spacing:5px;color:#F5F0E8;text-transform:uppercase;cursor:pointer;}
+.nav-links{display:flex;gap:32px;}
+.nav-links a{font-size:12px;color:#A89F93;letter-spacing:1.5px;text-transform:uppercase;transition:color .2s;padding:4px 0;border-bottom:1px solid transparent;}
+.nav-links a:hover,.nav-links a.active{color:#D4AF82;border-bottom-color:#D4AF82;}
+.nav-account-name{display:none;color:#D4AF82;margin-left:6px;font-weight:600;letter-spacing:1px;white-space:nowrap;}
+.nav-account-name.show{display:none;}
+.nav-icons{display:flex;gap:18px;align-items:center;}
+.nav-icons button{width:32px;height:32px;border:0;background:transparent;color:#A89F93;display:flex;align-items:center;justify-content:center;transition:color .2s;}
+.nav-icons button:hover{color:#D4AF82;}
+.nav-icons i{font-size:20px;}
+.menu-btn{display:none;}
+.cart-badge{position:relative;}
+.cart-badge::after{content:attr(data-count);position:absolute;top:-4px;right:-5px;background:#D4AF82;color:#0A0A0A;font-size:9px;font-weight:700;width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;line-height:16px;text-align:center;opacity:0;transform:scale(.8);transition:opacity .2s,transform .2s;}
+.cart-badge.has-items::after{opacity:1;transform:scale(1);}
+
+/* ── STRIP ── */
+.strip{background:#D4AF82;padding:10px 0;display:flex;gap:0;justify-content:center;overflow:hidden;}
+.strip-inner{display:flex;gap:48px;animation:marquee 20s linear infinite;}
+.strip-item{font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#0A0A0A;white-space:nowrap;font-weight:600;}
+@keyframes marquee{0%{transform:translateX(0);}100%{transform:translateX(-50%);}}
+
+/* ── BUTTONS ── */
+.btn-gold{background:#D4AF82;color:#0A0A0A;border:none;padding:13px 30px;border-radius:3px;font-size:12px;letter-spacing:1.5px;text-transform:uppercase;font-weight:600;transition:background .2s;}
+.btn-gold:hover{background:#E2C49A;}
+.btn-ghost{background:transparent;color:#F5F0E8;border:1px solid #3A3530;padding:13px 30px;border-radius:3px;font-size:12px;letter-spacing:1.5px;text-transform:uppercase;transition:border-color .2s,color .2s;}
+.btn-ghost:hover{border-color:#D4AF82;color:#D4AF82;}
+.btn-dark{background:#1A1714;color:#F5F0E8;border:none;padding:13px 30px;border-radius:3px;font-size:12px;letter-spacing:1.5px;text-transform:uppercase;font-weight:600;transition:background .2s;}
+.btn-dark:hover{background:#2A2320;}
+.btn-outline-dark{background:transparent;color:#1A1714;border:1px solid #C0B8AF;padding:11px 24px;border-radius:3px;font-size:12px;letter-spacing:1px;text-transform:uppercase;transition:border-color .2s;}
+.btn-outline-dark:hover{border-color:#D4AF82;color:#B8924A;}
+.btn-checkout{width:100%;}
+
+/* ── SECTION UTIL ── */
+.sec{padding:72px 48px;}
+.sec.alt{background:#F2EDE5;}
+.sec.dark{background:#0A0A0A;}
+.sec-label{font-size:10px;letter-spacing:4px;text-transform:uppercase;color:#D4AF82;margin-bottom:10px;}
+.sec-title{font-size:30px;font-weight:400;color:#1A1714;margin-bottom:8px;font-family:Georgia,serif;}
+.sec-title.light{color:#F5F0E8;}
+.sec-sub{font-size:14px;color:#7A7068;margin-bottom:40px;line-height:1.7;}
+
+.faq-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+.faq-card{background:#fff;border:0.5px solid #DDD8CF;border-radius:6px;padding:22px;}
+.faq-question{font-size:14px;font-weight:600;color:#1A1714;margin-bottom:8px;}
+.faq-answer{font-size:13px;color:#7A7068;line-height:1.7;}
+
+/* ══════════════════════════════════
+PAGE: HOME
+══════════════════════════════════ */
+.home-hero{background:#0A0A0A;padding:96px 48px 80px;display:grid;grid-template-columns:1.1fr 0.9fr;gap:56px;align-items:center;}
+.hero-eye{font-size:10px;letter-spacing:5px;text-transform:uppercase;color:#D4AF82;margin-bottom:20px;}
+.hero-h1{font-size:56px;font-weight:400;line-height:1.1;color:#F5F0E8;font-family:Georgia,serif;}
+.hero-h1 em{font-style:italic;color:#D4AF82;}
+.hero-body{font-size:15px;color:#A89F93;line-height:1.85;margin-top:18px;max-width:360px;}
+.hero-btns{display:flex;gap:14px;margin-top:32px;flex-wrap:wrap;}
+.hero-cards{display:flex;flex-direction:column;gap:14px;}
+.hcard{background:#161410;border:0.5px solid #2A2520;border-radius:6px;padding:22px 24px;display:flex;align-items:center;gap:18px;transition:border-color .2s;cursor:pointer;}
+.hcard:hover{border-color:#D4AF82;}
+.hcard-icon{width:48px;height:48px;background:#1E1A15;border-radius:5px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.hcard-icon i{font-size:22px;color:#D4AF82;}
+.hcard-title{font-size:14px;font-weight:500;color:#F5F0E8;margin-bottom:3px;}
+.hcard-sub{font-size:12px;color:#7A7068;}
+
+/* CATEGORY GRID */
+.cat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;}
+.cat-card{background:#fff;border:0.5px solid #DDD8CF;border-radius:6px;padding:28px 18px;text-align:center;cursor:pointer;transition:border-color .2s,transform .15s;}
+.cat-card:hover{border-color:#D4AF82;transform:translateY(-2px);}
+.cat-badge{display:inline-block;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#D4AF82;background:rgba(212,175,130,.12);padding:3px 9px;border-radius:3px;margin-bottom:12px;}
+.cat-name{font-size:15px;font-weight:500;color:#1A1714;margin-bottom:5px;}
+.cat-sub{font-size:12px;color:#9B9188;}
+
+/* BESTSELLERS */
+.prod-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;}
+.prod-card{background:#fff;border:0.5px solid #DDD8CF;border-radius:6px;overflow:hidden;cursor:pointer;transition:border-color .2s,transform .15s;}
+.prod-card:hover{border-color:#D4AF82;transform:translateY(-2px);}
+.prod-img{height:180px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#F5EDD8,#EAD9B8);overflow:hidden;position:relative;}
+.prod-img img{width:100%;height:100%;object-fit:contain;padding:8px;}
+.prod-img i{font-size:52px;color:#C4A06A;}
+.prod-art{width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#F9F6F1 0%,#EAD9B8 100%);}
+.prod-art.dark{background:linear-gradient(135deg,#1A1714 0%,#5A5248 100%);}
+.prod-art.dark i{color:#D4AF82;}
+.prod-info{padding:16px;}
+.prod-name{font-size:14px;font-weight:500;color:#1A1714;margin-bottom:3px;}
+.prod-cat{font-size:11px;color:#9B9188;margin-bottom:2px;}
+.prod-price{font-size:15px;font-weight:600;color:#B8924A;margin-top:8px;}
+.prod-add{width:100%;margin-top:10px;}
+
+/* TESTIMONIALS */
+.testi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;}
+.testi-card{background:#fff;border:0.5px solid #DDD8CF;border-radius:6px;padding:24px;}
+.testi-stars{color:#D4AF82;font-size:12px;letter-spacing:3px;margin-bottom:12px;}
+.testi-text{font-size:13px;color:#5A5248;line-height:1.8;font-family:Georgia,serif;font-style:italic;margin-bottom:14px;}
+.testi-author{font-size:12px;font-weight:600;color:#1A1714;}
+.testi-loc{font-size:11px;color:#9B9188;}
+
+/* CTA BANNER */
+.cta-banner{background:#0A0A0A;padding:80px 48px;text-align:center;}
+.cta-banner .sec-label{color:#D4AF82;}
+.cta-banner h2{font-size:38px;font-weight:400;color:#F5F0E8;font-family:Georgia,serif;margin-bottom:10px;}
+.cta-banner h2 em{font-style:italic;color:#D4AF82;}
+.cta-banner p{font-size:14px;color:#A89F93;margin-bottom:28px;}
+
+/* FEATURES ROW */
+.feat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;}
+.feat{text-align:center;padding:20px;}
+.feat-ico{width:52px;height:52px;background:rgba(212,175,130,.12);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;}
+.feat-ico i{font-size:22px;color:#D4AF82;}
+.feat-title{font-size:14px;font-weight:600;color:#1A1714;margin-bottom:4px;}
+.feat-text{font-size:12px;color:#7A7068;line-height:1.7;}
+
+/* ══════════════════════════════════
+PAGE: KIDS / MEN (COLLECTION)
+══════════════════════════════════ */
+.coll-hero{background:#0A0A0A;padding:64px 48px;display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center;}
+.coll-hero-img{height:260px;background:#161410;border:0.5px solid #2A2520;border-radius:8px;display:flex;align-items:center;justify-content:center;}
+.coll-hero-img img{width:100%;height:100%;object-fit:contain;padding:12px;}
+.coll-hero-img i{font-size:80px;color:#3A3530;}
+.filter-row{display:flex;gap:10px;margin-bottom:32px;flex-wrap:wrap;}
+.filter-btn{background:#fff;border:0.5px solid #DDD8CF;padding:8px 18px;border-radius:20px;font-size:12px;color:#5A5248;cursor:pointer;letter-spacing:.5px;transition:border-color .2s,color .2s;}
+.filter-btn:hover,.filter-btn.active{border-color:#D4AF82;color:#B8924A;}
+.prod-grid-lg{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
+
+/* ══════════════════════════════════
+PAGE: NEW ARRIVALS
+══════════════════════════════════ */
+.arrivals-hero{background:#1A1714;padding:64px 48px;text-align:center;}
+.arrivals-hero-label{font-size:10px;letter-spacing:4px;text-transform:uppercase;color:#D4AF82;margin-bottom:10px;}
+.arrivals-hero-title{font-size:44px;font-weight:400;line-height:1.1;color:#F5F0E8;font-family:Georgia,serif;text-align:center;}
+.arrivals-hero-copy{color:#A89F93;text-align:center;margin-top:12px;font-size:14px;}
+.arrivals-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:20px;}
+.arrival-big{grid-column:1/-1;background:#fff;border:0.5px solid #DDD8CF;border-radius:8px;padding:32px;display:flex;gap:32px;align-items:center;cursor:pointer;transition:border-color .2s;}
+.arrival-big:hover{border-color:#D4AF82;}
+.arrival-big-img{width:160px;height:160px;background:linear-gradient(135deg,#F5EDD8,#EAD9B8);border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.arrival-big-img i{font-size:60px;color:#C4A06A;}
+.arrival-big-badge{display:inline-block;background:#D4AF82;color:#0A0A0A;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:3px 8px;border-radius:2px;margin-bottom:10px;}
+.arrival-big-name{font-size:20px;font-weight:500;color:#1A1714;font-family:Georgia,serif;margin-bottom:6px;}
+.arrival-big-sub{font-size:13px;color:#7A7068;line-height:1.7;margin-bottom:14px;}
+
+/* ══════════════════════════════════
+PAGE: CONTACT
+══════════════════════════════════ */
+.contact-hero{background:#0A0A0A;padding:64px 48px;text-align:center;}
+.account-hero-label{color:#D4AF82;text-align:center;}
+.account-hero-title{color:#F5F0E8;text-align:center;font-size:44px;}
+.account-hero-copy{color:#A89F93;text-align:center;margin-top:12px;font-size:14px;}
+.account-card-title{margin-bottom:14px;}
+.contact-hero-label{color:#D4AF82;text-align:center;}
+.contact-hero-title{color:#F5F0E8;text-align:center;font-size:44px;}
+.contact-hero-copy{color:#A89F93;text-align:center;margin-top:12px;font-size:14px;}
+.contact-card-title,.contact-form-title{margin-bottom:24px;}
+.contact-hero .sec-label{color:#D4AF82;text-align:center;}
+.account-actions.hidden{display:none;}
+.contact-grid{display:grid;grid-template-columns:1fr 1.2fr;gap:48px;align-items:start;}
+.contact-info-card{background:#fff;border:0.5px solid #DDD8CF;border-radius:8px;padding:32px;}
+.cinfo{display:flex;align-items:flex-start;gap:14px;margin-bottom:24px;}
+.cinfo:last-child{margin-bottom:0;}
+.cinfo-icon{width:40px;height:40px;background:#F9F6F1;border:0.5px solid #DDD8CF;border-radius:5px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.cinfo-icon i{font-size:18px;color:#D4AF82;}
+.cinfo-label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#9B9188;margin-bottom:3px;}
+.cinfo-val{font-size:14px;color:#1A1714;}
+.contact-form-card{background:#fff;border:0.5px solid #DDD8CF;border-radius:8px;padding:32px;}
+.account-grid{display:grid;grid-template-columns:.9fr 1.1fr;gap:36px;align-items:start;}
+.account-card{background:#fff;border:0.5px solid #DDD8CF;border-radius:8px;padding:32px;}
+.account-tabs{display:flex;background:#F2EDE5;border:0.5px solid #DDD8CF;border-radius:6px;padding:4px;margin-bottom:22px;}
+.account-tab{flex:1;border:0;background:transparent;color:#7A7068;padding:10px;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;border-radius:4px;}
+.account-tab.active{background:#1A1714;color:#F5F0E8;}
+.account-form{display:none;}
+.account-form.active{display:block;}
+.account-status{background:#F9F6F1;border:0.5px solid #DDD8CF;border-radius:6px;padding:18px;margin-top:18px;font-size:13px;color:#5A5248;line-height:1.7;}
+.account-status strong{color:#1A1714;}
+.account-note{font-size:13px;color:#7A7068;line-height:1.8;}
+.account-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:18px;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.form-field{display:flex;flex-direction:column;gap:6px;margin-bottom:14px;}
+.form-field label{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#7A7068;}
+.form-field input,.form-field textarea,.form-field select{background:#F9F6F1;border:0.5px solid #DDD8CF;border-radius:4px;padding:11px 14px;font-size:14px;color:#1A1714;font-family:inherit;outline:none;transition:border-color .2s;}
+.form-field input:focus,.form-field textarea:focus,.form-field select:focus{border-color:#D4AF82;}
+.form-field textarea{height:120px;resize:none;}
+.password-wrap{position:relative;}
+.password-wrap input{width:100%;padding-right:44px;}
+.password-toggle{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:34px;height:34px;border:0;background:transparent;color:#7A7068;display:flex;align-items:center;justify-content:center;border-radius:4px;}
+.password-toggle:hover{color:#B8924A;background:rgba(212,175,130,.12);}
+.password-toggle i{font-size:18px;}
+.map-placeholder{background:#F2EDE5;border:0.5px solid #DDD8CF;border-radius:8px;height:200px;display:flex;flex-direction:column;align-items:center;justify-content:center;margin-top:24px;gap:8px;}
+.map-placeholder i{font-size:36px;color:#D4AF82;}
+.map-placeholder p{font-size:13px;color:#7A7068;}
+.map-placeholder .map-link{font-size:11px;color:#9B9188;}
+
+/* ══════════════════════════════════
+FOOTER
+══════════════════════════════════ */
+footer{background:#060606;padding:48px 48px 28px;}
+.foot-top{display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;gap:40px;margin-bottom:40px;}
+.foot-brand-name{font-size:16px;letter-spacing:5px;text-transform:uppercase;color:#5A5248;margin-bottom:12px;}
+.foot-brand-desc{font-size:12px;color:#3A3530;line-height:1.8;}
+.foot-col-title{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:#5A5248;margin-bottom:16px;}
+.foot-col a{display:block;font-size:12px;color:#3A3530;margin-bottom:10px;transition:color .2s;}
+.foot-col a:hover{color:#D4AF82;}
+.foot-bottom{border-top:0.5px solid #1A1714;padding-top:24px;display:flex;justify-content:space-between;align-items:center;}
+.foot-copy{font-size:11px;color:#2A2520;}
+.foot-social{display:flex;gap:16px;}
+.foot-social i{font-size:18px;color:#3A3530;cursor:pointer;transition:color .2s;}
+.foot-social i:hover{color:#D4AF82;}
+
+/* ══════════════════════════════════
+TOAST
+══════════════════════════════════ */
+.toast{position:fixed;bottom:32px;right:32px;background:#1A1714;color:#F5F0E8;padding:14px 22px;border-radius:4px;font-size:13px;opacity:0;transform:translateY(10px);transition:opacity .25s,transform .25s;z-index:9999;display:flex;align-items:center;gap:10px;pointer-events:none;}
+.toast.show{opacity:1;transform:translateY(0);}
+.toast i{color:#D4AF82;}
+
+/* ── PANELS ── */
+.overlay{position:fixed;inset:0;background:rgba(10,10,10,.55);z-index:400;opacity:0;pointer-events:none;transition:opacity .2s;}
+.overlay.show{opacity:1;pointer-events:auto;}
+.panel{position:fixed;top:0;right:0;width:min(420px,100%);height:100vh;background:#F9F6F1;z-index:500;transform:translateX(100%);visibility:hidden;transition:transform .25s,visibility .25s;box-shadow:-18px 0 40px rgba(0,0,0,.25);display:flex;flex-direction:column;}
+.panel.show{transform:translateX(0);visibility:visible;}
+.panel-head{height:64px;background:#0A0A0A;color:#F5F0E8;display:flex;align-items:center;justify-content:space-between;padding:0 22px;}
+.panel-title{font-size:12px;letter-spacing:3px;text-transform:uppercase;}
+.icon-btn{border:0;background:transparent;color:inherit;width:34px;height:34px;display:flex;align-items:center;justify-content:center;}
+.icon-btn i{font-size:22px;}
+.panel-body{padding:24px;overflow:auto;flex:1;}
+.search-box{display:flex;gap:10px;margin-bottom:20px;}
+.search-box input{flex:1;border:0.5px solid #DDD8CF;background:#fff;border-radius:4px;padding:12px 14px;font-size:14px;outline:none;}
+.search-results{display:grid;gap:12px;}
+.result-row,.cart-row{background:#fff;border:0.5px solid #DDD8CF;border-radius:6px;padding:14px;display:flex;justify-content:space-between;gap:14px;align-items:center;}
+.result-name,.cart-name{font-size:14px;font-weight:600;color:#1A1714;}
+.result-meta,.cart-meta{font-size:12px;color:#7A7068;margin-top:3px;}
+.cart-empty{font-size:14px;color:#7A7068;line-height:1.7;background:#fff;border:0.5px solid #DDD8CF;border-radius:6px;padding:18px;}
+.cart-foot{border-top:0.5px solid #DDD8CF;padding:18px 24px;background:#fff;}
+.cart-total{display:flex;justify-content:space-between;font-size:15px;font-weight:700;margin-bottom:14px;}
+.modal{position:fixed;left:50%;top:50%;width:min(560px,calc(100% - 32px));max-height:calc(100vh - 48px);overflow:auto;transform:translate(-50%,-45%) scale(.98);background:#fff;border-radius:8px;z-index:520;opacity:0;visibility:hidden;pointer-events:none;transition:opacity .2s,transform .2s,visibility .2s;box-shadow:0 20px 60px rgba(0,0,0,.28);}
+.modal.show{opacity:1;visibility:visible;pointer-events:auto;transform:translate(-50%,-50%) scale(1);}
+.modal-head{background:#0A0A0A;color:#F5F0E8;display:flex;align-items:center;justify-content:space-between;padding:18px 22px;}
+.modal-body{padding:24px;}
+.modal-body p{font-size:14px;color:#5A5248;line-height:1.8;margin-bottom:14px;}
+.modal-body ul{padding-left:18px;color:#5A5248;font-size:14px;line-height:1.8;}
+.wishlist-on{color:#D4AF82!important;}
+
+/* ══════════════════════════════════
+RESPONSIVE
+══════════════════════════════════ */
+@media(max-width:900px){
+  nav{padding:0 20px;}
+  .menu-btn{display:flex;}
+  .nav-links{position:fixed;top:64px;left:0;right:0;background:#0A0A0A;display:none;flex-direction:column;gap:0;padding:10px 20px 18px;border-top:0.5px solid #1A1714;}
+  .nav-links.open{display:flex;}
+  .nav-links a{padding:12px 0;}
+  .nav-account-name.show{display:none;}
+  .home-hero{grid-template-columns:1fr;padding:56px 20px 40px;}
+  .hero-cards{display:none;}
+  .hero-h1{font-size:36px;}
+  .cat-grid{grid-template-columns:repeat(2,1fr);}
+  .prod-grid,.prod-grid-lg{grid-template-columns:repeat(2,1fr);}
+  .testi-grid{grid-template-columns:1fr;}
+  .feat-row{grid-template-columns:repeat(2,1fr);}
+  .sec{padding:48px 20px;}
+  .coll-hero{grid-template-columns:1fr;padding:40px 20px;}
+  .arrivals-grid{grid-template-columns:1fr;}
+  .contact-grid{grid-template-columns:1fr;}
+  .foot-top{grid-template-columns:1fr 1fr;}
+  footer{padding:36px 20px 20px;}
+  .cta-banner{padding:56px 20px;}
+  .cta-banner h2{font-size:28px;}
+}
+@media(min-width:1200px){
+  .nav-account-name.show{display:inline;}
+}
+@media(max-width:520px){
+  .cat-grid,.prod-grid,.prod-grid-lg{grid-template-columns:1fr;}
+  .form-row{grid-template-columns:1fr;}
+  .foot-top{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<!-- TOAST -->
+<div class="toast" id="toast"><i class="ti ti-check"></i><span id="toast-msg"></span></div>
+
+<div class="overlay" id="overlay" onclick="closePanels()"></div>
+
+<aside class="panel" id="search-panel" aria-label="Search products">
+  <div class="panel-head">
+    <div class="panel-title">Search Myeonn</div>
+    <button type="button" class="icon-btn" onclick="closePanels()" aria-label="Close search"><i class="ti ti-x"></i></button>
+  </div>
+  <div class="panel-body">
+    <div class="search-box">
+      <input id="search-input" type="search" placeholder="Search tees, hoodies, shirts..." oninput="renderSearch()">
+      <button type="button" class="btn-dark" onclick="renderSearch()">Search</button>
+    </div>
+    <div class="search-results" id="search-results"></div>
+  </div>
+</aside>
+
+<aside class="panel" id="cart-panel" aria-label="Shopping cart">
+  <div class="panel-head">
+    <div class="panel-title">Your cart</div>
+    <button type="button" class="icon-btn" onclick="closePanels()" aria-label="Close cart"><i class="ti ti-x"></i></button>
+  </div>
+  <div class="panel-body" id="cart-items"></div>
+  <div class="cart-foot">
+    <div class="cart-total"><span>Total</span><span id="cart-total">₹0</span></div>
+    <button type="button" class="btn-gold btn-checkout" onclick="checkout()">Checkout</button>
+  </div>
+</aside>
+
+<div class="modal" id="info-modal" role="dialog" aria-modal="true" aria-labelledby="info-title">
+  <div class="modal-head">
+    <div class="panel-title" id="info-title">Myeonn</div>
+    <button type="button" class="icon-btn" onclick="closePanels()" aria-label="Close"><i class="ti ti-x"></i></button>
+  </div>
+  <div class="modal-body" id="info-body"></div>
+</div>
+
+<!-- ════════════════════ NAV (shared) ════════════════════ -->
+<nav>
+  <div class="nav-logo" onclick="showPage('home')">Myeonn</div>
+  <div class="nav-links">
+    <a onclick="showPage('home')" id="nav-home">Home</a>
+    <a onclick="showPage('kids')" id="nav-kids">Kids</a>
+    <a onclick="showPage('men')" id="nav-men">Men</a>
+    <a onclick="showPage('arrivals')" id="nav-arrivals">New arrivals</a>
+    <a onclick="showPage('contact')" id="nav-contact">Contact</a>
+    <a onclick="showPage('login')" id="nav-login"><span id="nav-login-label">Login</span><span id="nav-account-name" class="nav-account-name"></span></a>
+  </div>
+  <div class="nav-icons">
+    <button type="button" onclick="openSearch()" aria-label="Search"><i class="ti ti-search"></i></button>
+    <button type="button" id="account-btn" onclick="showPage('login')" aria-label="Account"><i class="ti ti-user"></i></button>
+    <button type="button" id="wishlist-btn" onclick="showWishlist()" aria-label="Wishlist"><i class="ti ti-heart"></i></button>
+    <button type="button" class="cart-badge" id="cart-btn" data-count="0" onclick="openCart()" aria-label="Cart"><i class="ti ti-shopping-bag"></i></button>
+    <button type="button" class="menu-btn" onclick="toggleMenu()" aria-label="Menu"><i class="ti ti-menu-2"></i></button>
+  </div>
+</nav>
+
+<!-- ════════════════════ STRIP ════════════════════ -->
+<div class="strip">
+  <div class="strip-inner">
+    <span class="strip-item">Free shipping over ₹999</span>
+    <span class="strip-item">·</span>
+    <span class="strip-item">15-day returns</span>
+    <span class="strip-item">·</span>
+    <span class="strip-item">100% quality guarantee</span>
+    <span class="strip-item">·</span>
+    <span class="strip-item">New arrivals weekly</span>
+    <span class="strip-item">·</span>
+    <span class="strip-item">Free shipping over ₹999</span>
+    <span class="strip-item">·</span>
+    <span class="strip-item">15-day returns</span>
+    <span class="strip-item">·</span>
+    <span class="strip-item">100% quality guarantee</span>
+    <span class="strip-item">·</span>
+    <span class="strip-item">New arrivals weekly</span>
+    <span class="strip-item">·</span>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+  PAGE: HOME
+══════════════════════════════════════ -->
+<div class="page active" id="page-home">
+
+  <!-- Hero -->
+  <div class="home-hero">
+    <div>
+      <div class="hero-eye">New season · 2026</div>
+      <h1 class="hero-h1">Dressed for<br><em>every moment</em></h1>
+      <p class="hero-body">Premium clothing for kids and men — soft on skin, built to last, styled to feel right from first wear to hundredth wash.</p>
+      <div class="hero-btns">
+        <button type="button" class="btn-gold" onclick="showPage('kids')">Shop kids →</button>
+        <button type="button" class="btn-ghost" onclick="showPage('men')">Shop men</button>
+      </div>
+    </div>
+    <div class="hero-cards">
+      <div class="hcard" onclick="showPage('kids')">
+        <div class="hcard-icon"><i class="ti ti-shirt"></i></div>
+        <div><div class="hcard-title">Kids wear</div><div class="hcard-sub">Ages 0–14 · Playful fits · Easy care</div></div>
+      </div>
+      <div class="hcard" onclick="showPage('men')">
+        <div class="hcard-icon"><i class="ti ti-tie"></i></div>
+        <div><div class="hcard-title">Men's wear</div><div class="hcard-sub">Casuals, formals &amp; weekend styles</div></div>
+      </div>
+      <div class="hcard" onclick="showPage('arrivals')">
+        <div class="hcard-icon"><i class="ti ti-sparkles"></i></div>
+        <div><div class="hcard-title">New arrivals</div><div class="hcard-sub">Fresh drops every week</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Categories -->
+  <div class="sec">
+    <div class="sec-label">Browse</div>
+    <div class="sec-title">Shop by category</div>
+    <div class="cat-grid">
+      <div class="cat-card" onclick="showPage('kids')">
+        <div class="cat-badge">Kids</div>
+        <div class="cat-name">Little ones</div>
+        <div class="cat-sub">Soft, playful &amp; built for adventure</div>
+      </div>
+      <div class="cat-card" onclick="showPage('men')">
+        <div class="cat-badge">Men</div>
+        <div class="cat-name">Gentlemen</div>
+        <div class="cat-sub">Clean cuts, easy everyday fits</div>
+      </div>
+      <div class="cat-card" onclick="showPage('arrivals')">
+        <div class="cat-badge">New</div>
+        <div class="cat-name">New arrivals</div>
+        <div class="cat-sub">This week's freshest pieces</div>
+      </div>
+      <div class="cat-card" onclick="openInfo('sale')">
+        <div class="cat-badge">Sale</div>
+        <div class="cat-name">On sale</div>
+        <div class="cat-sub">Great styles, better prices</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bestsellers -->
+  <div class="sec alt">
+    <div class="sec-label">Picks</div>
+    <div class="sec-title">Bestsellers</div>
+    <div class="sec-sub">Our most-loved pieces — worn and reworn</div>
+    <div class="prod-grid">
+      <div class="prod-card">
+        <div class="prod-img"><i class="ti ti-shirt"></i></div>
+        <div class="prod-info">
+          <div class="prod-cat">Kids · Tops</div>
+          <div class="prod-name">Everyday tee</div>
+          <div class="prod-price">₹499</div>
+          <button type="button" class="btn-outline-dark prod-add" onclick="showToast('Added to cart!')">Add to cart</button>
+        </div>
+      </div>
+      <div class="prod-card">
+        <div class="prod-img"><i class="ti ti-shirt"></i></div>
+        <div class="prod-info">
+          <div class="prod-cat">Kids · Sets</div>
+          <div class="prod-name">Jogger set</div>
+          <div class="prod-price">₹899</div>
+          <button type="button" class="btn-outline-dark prod-add" onclick="showToast('Added to cart!')">Add to cart</button>
+        </div>
+      </div>
+      <div class="prod-card">
+        <div class="prod-img"><i class="ti ti-tie"></i></div>
+        <div class="prod-info">
+          <div class="prod-cat">Men · Shirts</div>
+          <div class="prod-name">Linen shirt</div>
+          <div class="prod-price">₹1,199</div>
+          <button type="button" class="btn-outline-dark prod-add" onclick="showToast('Added to cart!')">Add to cart</button>
+        </div>
+      </div>
+      <div class="prod-card">
+        <div class="prod-img"><i class="ti ti-tie"></i></div>
+        <div class="prod-info">
+          <div class="prod-cat">Men · Bottoms</div>
+          <div class="prod-name">Slim chinos</div>
+          <div class="prod-price">₹1,499</div>
+          <button type="button" class="btn-outline-dark prod-add" onclick="showToast('Added to cart!')">Add to cart</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Why Myeonn -->
+  <div class="sec">
+    <div class="sec-label">Promise</div>
+    <div class="sec-title">Why Myeonn?</div>
+    <div class="feat-row">
+      <div class="feat">
+        <div class="feat-ico"><i class="ti ti-shirt"></i></div>
+        <div class="feat-title">Soft fabrics</div>
+        <div class="feat-text">Gentle on skin, built for all-day wear and endless washes</div>
+      </div>
+      <div class="feat">
+        <div class="feat-ico"><i class="ti ti-star"></i></div>
+        <div class="feat-title">Quality first</div>
+        <div class="feat-text">Stitched to survive a hundred washes and still look new</div>
+      </div>
+      <div class="feat">
+        <div class="feat-ico"><i class="ti ti-truck"></i></div>
+        <div class="feat-title">Fast delivery</div>
+        <div class="feat-text">Delivered to your door in 2–4 working days</div>
+      </div>
+      <div class="feat">
+        <div class="feat-ico"><i class="ti ti-refresh"></i></div>
+        <div class="feat-title">Easy returns</div>
+        <div class="feat-text">Hassle-free 15-day return policy, no questions asked</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Testimonials -->
+  <div class="sec alt">
+    <div class="sec-label">Reviews</div>
+    <div class="sec-title">What customers say</div>
+    <div class="testi-grid">
+      <div class="testi-card">
+        <div class="testi-stars">★★★★★</div>
+        <div class="testi-text">"My kids live in these clothes. Washed a hundred times and still look new."</div>
+        <div class="testi-author">Priya M.</div>
+        <div class="testi-loc">Mumbai</div>
+      </div>
+      <div class="testi-card">
+        <div class="testi-stars">★★★★★</div>
+        <div class="testi-text">"The linen shirt is exactly what I needed — fits well, feels light, looks sharp."</div>
+        <div class="testi-author">Rahul S.</div>
+        <div class="testi-loc">Delhi</div>
+      </div>
+      <div class="testi-card">
+        <div class="testi-stars">★★★★★</div>
+        <div class="testi-text">"Fast delivery, great quality. My son refuses to wear anything else now!"</div>
+        <div class="testi-author">Anita K.</div>
+        <div class="testi-loc">Bengaluru</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <div class="cta-banner">
+    <div class="sec-label">Limited time</div>
+    <h2>New season, <em>new you</em></h2>
+    <p>Fresh arrivals — free shipping on orders above ₹999</p>
+    <button type="button" class="btn-gold" onclick="showPage('arrivals')">See new arrivals →</button>
+  </div>
+
+  <!-- Footer -->
+  <footer aria-label="Footer">
+    <div class="foot-top">
+      <div>
+        <div class="foot-brand-name">Myeonn</div>
+        <div class="foot-brand-desc">Premium clothing for kids and men. Soft fabrics, easy fits, styles the whole family will love.</div>
+      </div>
+      <div class="foot-col">
+        <div class="foot-col-title">Shop</div>
+        <a onclick="showPage('kids')">Kids wear</a>
+        <a onclick="showPage('men')">Men's wear</a>
+        <a onclick="showPage('arrivals')">New arrivals</a>
+        <a onclick="openInfo('sale')">Sale</a>
+      </div>
+      <div class="foot-col">
+        <div class="foot-col-title">Help</div>
+        <a onclick="showPage('contact')">Contact us</a>
+        <a onclick="openInfo('shipping')">Shipping info</a>
+        <a onclick="openInfo('returns')">Returns</a>
+        <a onclick="openInfo('sizes')">Size guide</a>
+      </div>
+      <div class="foot-col">
+        <div class="foot-col-title">Company</div>
+        <a onclick="openInfo('about')">About us</a>
+        <a onclick="openInfo('careers')">Careers</a>
+        <a onclick="openInfo('privacy')">Privacy policy</a>
+        <a onclick="openInfo('terms')">Terms</a>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <div class="foot-copy">© 2026 Myeonn · All rights reserved</div>
+      <div class="foot-social">
+        <i class="ti ti-brand-instagram"></i>
+        <i class="ti ti-brand-facebook"></i>
+        <i class="ti ti-brand-twitter"></i>
+      </div>
+    </div>
+  </footer>
+</div>
+
+<!-- ══════════════════════════════════════
+     PAGE: KIDS
+══════════════════════════════════════ -->
+<div class="page" id="page-kids">
+  <div class="coll-hero">
+    <div>
+      <div class="hero-eye">Kids collection · 2026</div>
+      <h1 class="hero-h1">Made for<br><em>little adventures</em></h1>
+      <p class="hero-body">Soft, durable, and playful — clothing that grows with your kids and survives everything they put it through.</p>
+      <div class="hero-btns">
+        <button type="button" class="btn-gold" onclick="showToast('Viewing all kids wear!')">Shop all kids →</button>
+      </div>
+    </div>
+    <div class="coll-hero-img"><i class="ti ti-shirt"></i></div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-label">Filter</div>
+    <div class="sec-title">Kids wear</div>
+    <div class="filter-row">
+      <button type="button" class="filter-btn active" onclick="setFilter(this)">All</button>
+      <button type="button" class="filter-btn" onclick="setFilter(this)">Tops</button>
+      <button type="button" class="filter-btn" onclick="setFilter(this)">Bottoms</button>
+      <button type="button" class="filter-btn" onclick="setFilter(this)">Sets</button>
+      <button type="button" class="filter-btn" onclick="setFilter(this)">Winter</button>
+      <button type="button" class="filter-btn" onclick="setFilter(this)">Ages 0–4</button>
+      <button type="button" class="filter-btn" onclick="setFilter(this)">Ages 4–8</button>
+      <button type="button" class="filter-btn" onclick="setFilter(this)">Ages 8–14</button>
+    </div>
+    <div class="prod-grid-lg">
+      <div class="prod-card"><div class="prod-img"><img src="images/14 Black 1(White) 1(F).png" alt="Falcan kids hoodie"></div><div class="prod-info"><div class="prod-cat">T Shirt · Ages 5–16</div><div class="prod-name">Falcan</div><div class="prod-price">₹525</div><button type="button" class="btn-outline-dark prod-add" onclick="showToast('Added to cart!')">Add to cart</button></div></div>
+      <div class="prod-card"><div class="prod-img"><div class="prod-art"><i class="ti ti-shirt"></i></div></div><div class="prod-info"><div class="prod-cat">Sets · Ages 4–14</div><div class="prod-name">Jogger set</div><div class="prod-price">₹899</div><button type="button" class="btn-outline-dark prod-add" onclick="showToast('Added to cart!')">Add to cart</button></div></div>
+      <div class="prod-card"><div class="prod-img"><div class="prod-art"><i class="ti ti-shirt"></i></div></div><div class="prod-info"><div class="prod-cat">Tops · Ages 0–4</div><div class="prod-name">Toddler polo</div><div class="prod-price">₹449</div><button type="button" class="btn-outline-dark prod-add" onclick="showToast('Added to cart!')">Add to cart</button></div></div>
+      <div class="prod-card">
+        <div class="prod-img"><div class="prod-art"><i class="ti ti-hanger"></i></div></div>
+        <div class="prod-info">
+          <div class="prod-cat">Bottoms · Ages 4–12</div>
+          <div class="prod-name">Cargo shorts</div>
+          <div class="prod-price">₹599</div>
+          <button type="button" class="btn-outline-dark prod-add" onclick="showToast('Added to cart!')">Add to cart</button>
+        </div>
+      </div>
+      <div class="prod-card">
+        <div class="prod-img"><div class="prod-art dark"><i class="ti ti-shirt"></i></div></div>
+        <div class="prod-info">
+          <div class="prod-cat">Winter · Ages 2–10</div>
+          <div class="prod-name">Fleece hoodie</div>
+          <div class="prod-price">₹999</div>
+          <button type="button" class="btn-outline-dark prod-add" onclick="showToast('Added to cart!')">Add to cart</button>
+        </div>
+      </div>
+      <div class="prod-card">
+        <div class="prod-img"><div class="prod-art"><i class="ti ti-baby-carriage"></i></div></div>
+        <div class="prod-info">
+          <div class="prod-cat">Sets · Ages 0–4</div>
+          <div class="prod-name">Onesie 3-pack</div>
+          <div class="prod-price">₹749</div>
+          <button type="button" class="btn-outline-dark prod-add" onclick="showToast('Added to cart!')">Add to cart</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cta-banner">
+    <div class="sec-label">For the gentlemen</div>
+    <h2>Also check out <em>men's wear</em></h2>
+    <p>Casuals, formals, and weekend fits for dad too</p>
+    <button type="button" class="btn-gold" onclick="showPage('men')">Shop men's →</button>
+  </div>
+
+  <!-- Footer repeat -->
+  <footer aria-label="Homepage footer">
+    <div class="foot-top">
+      <div><div class="foot-brand-name">Myeonn</div><div class="foot-brand-desc">Premium clothing for kids and men.</div></div>
+      <div class="foot-col"><div class="foot-col-title">Shop</div><a onclick="showPage('kids')">Kids wear</a><a onclick="showPage('men')">Men's wear</a><a onclick="showPage('arrivals')">New arrivals</a></div>
+      <div class="foot-col"><div class="foot-col-title">Help</div><a onclick="showPage('contact')">Contact us</a><a onclick="openInfo('returns')">Returns</a><a onclick="openInfo('sizes')">Size guide</a></div>
+      <div class="foot-col"><div class="foot-col-title">Company</div><a onclick="openInfo('about')">About us</a><a onclick="openInfo('privacy')">Privacy policy</a></div>
+    </div>
+    <div class="foot-bottom"><div class="foot-copy">© 2026 Myeonn</div><div class="foot-social"><i class="ti ti-brand-instagram"></i><i class="ti ti-brand-facebook"></i></div></div>
+  </footer>
+</div>
+
+<!-- ══════════════════════════════════════
+  PAGE: MEN
+══════════════════════════════════════ -->
+<div class="page" id="page-men">
+  <div class="coll-hero">
+    <div>
+      <div class="hero-eye">Men's collection · 2026</div>
+      <h1 class="hero-h1">Effortless style,<br><em>every day</em></h1>
+      <p class="hero-body">From morning meetings to weekend outings — clothing that works as hard as you do and looks good doing it.</p>
+      <div class="hero-btns">
+        <button type="button" class="btn-gold" onclick="showToast('Viewing all men\'s wear!')">Shop all men →</button>
+      </div>
+    </div>
+    <div class="coll-hero-img"><i class="ti ti-tie"></i></div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-label">Filter</div>
+    <div class="sec-title">Men's wear</div>
+    <div class="filter-row">
+      <button type="button" class="filter-btn active" onclick="setFilter(this)">All</button>
+      <button type="button" class="filter-btn" onclick="setFilter(this)">Shirts</button>
+      <button type="button" class="filter-btn" onclick="setFilter(this)">T-shirts</button>
+      <button type="button" class="filter-btn" onclick="setFilter(this)">Trousers</button>
+      <button type="button" class="filter-btn" onclick="setFilter(this)">Formals</button>
+      <button type="button" class="filter-btn" onclick="setFilter(this)">Casuals</button>
+      <button type="button" class="filter-btn" onclick="setFilter(this)">S–XL</button>
+      <button type="button" class="filter-btn" onclick="setFilter(this)">XXL+</button>
+    </div>
+    <div class="prod-grid-lg">
+      <div class="prod-card"><div class="prod-img"><i class="ti ti-tie"></i></div><div class="prod-info"><div class="prod-cat">Shirts · S–XXL</div><div class="prod-name">Linen shirt</div><div class="prod-price">₹1,199</div><button type="button" class="btn-outline-dark prod-add" onclick="showToast('Added to cart!')">Add to cart</button></div></div>
+      <div class="prod-card"><div class="prod-img"><i class="ti ti-tie"></i></div><div class="prod-info"><div class="prod-cat">Trousers · 28–36</div><div class="prod-name">Slim chinos</div><div class="prod-price">₹1,499</div><button type="button" class="btn-outline-dark prod-add" onclick="showToast('Added to cart!')">Add to cart</button></div></div>
+      <div class="prod-card"><div class="prod-img"><i class="ti ti-tie"></i></div><div class="prod-info"><div class="prod-cat">T-shirts · S–XXL</div><div class="prod-name">Classic polo</div><div class="prod-price">₹699</div><button type="button" class="btn-outline-dark prod-add" onclick="showToast('Added to cart!')">Add to cart</button></div></div>
+      <div class="prod-card"><div class="prod-img"><i class="ti ti-tie"></i></div><div class="prod-info"><div class="prod-cat">Formals · S–XXL</div><div class="prod-name">Oxford shirt</div><div class="prod-price">₹1,399</div><button type="button" class="btn-outline-dark prod-add" onclick="showToast('Added to cart!')">Add to cart</button></div></div>
+      <div class="prod-card"><div class="prod-img"><i class="ti ti-tie"></i></div><div class="prod-info"><div class="prod-cat">Casuals · S–3XL</div><div class="prod-name">Weekend joggers</div><div class="prod-price">₹999</div><button type="button" class="btn-outline-dark prod-add" onclick="showToast('Added to cart!')">Add to cart</button></div></div>
+      <div class="prod-card"><div class="prod-img"><i class="ti ti-tie"></i></div><div class="prod-info"><div class="prod-cat">Shirts · S–XXL</div><div class="prod-name">Check flannel</div><div class="prod-price">₹1,099</div><button type="button" class="btn-outline-dark prod-add" onclick="showToast('Added to cart!')">Add to cart</button></div></div>
+    </div>
+  </div>
+
+  <div class="cta-banner">
+    <div class="sec-label">For the little ones</div>
+    <h2>Also check out <em>kids' wear</em></h2>
+    <p>Soft, playful, and built to last — for ages 0 to 14</p>
+    <button type="button" class="btn-gold" onclick="showPage('kids')">Shop kids →</button>
+  </div>
+
+  <footer aria-label="Myeonn site footer">
+    <div class="foot-top">
+      <div><div class="foot-brand-name">Myeonn</div><div class="foot-brand-desc">Premium clothing for kids and men.</div></div>
+      <div class="foot-col"><div class="foot-col-title">Shop</div><a onclick="showPage('kids')">Kids wear</a><a onclick="showPage('men')">Men's wear</a><a onclick="showPage('arrivals')">New arrivals</a></div>
+      <div class="foot-col"><div class="foot-col-title">Help</div><a onclick="showPage('contact')">Contact us</a><a onclick="openInfo('returns')">Returns</a><a onclick="openInfo('sizes')">Size guide</a></div>
+      <div class="foot-col"><div class="foot-col-title">Company</div><a onclick="openInfo('about')">About us</a><a onclick="openInfo('privacy')">Privacy policy</a></div>
+    </div>
+    <div class="foot-bottom"><div class="foot-copy">© 2026 Myeonn</div><div class="foot-social"><i class="ti ti-brand-instagram"></i><i class="ti ti-brand-facebook"></i></div></div>
+  </footer>
+</div>
+
+<!-- ══════════════════════════════════════
+PAGE: NEW ARRIVALS
+══════════════════════════════════════ -->
+<div class="page" id="page-arrivals">
+  <div class="arrivals-hero">
+    <div class="arrivals-hero-label">Just dropped</div>
+    <h1 class="arrivals-hero-title">New arrivals</h1>
+    <p class="arrivals-hero-copy">Fresh pieces added every week — be the first to wear them</p>
+  </div>
+
+  <div class="sec">
+    <div class="sec-label">This week</div>
+    <div class="sec-title">Latest drops</div>
+    <div class="arrivals-grid">
+      <div class="arrival-big">
+        <div class="arrival-big-img"><i class="ti ti-shirt"></i></div>
+        <div>
+          <div class="arrival-big-badge">New · Kids</div>
+          <div class="arrival-big-name">Summer print tee — 2026</div>
+          <div class="arrival-big-sub">Bold prints, soft cotton, easy care. Available in 8 colours for ages 2–12. The tee they'll want to wear every single day.</div>
+          <button type="button" class="btn-gold" onclick="showToast('Added to cart!')">Add to cart — ₹549</button>
+        </div>
+      </div>
+      <div class="arrival-big">
+        <div class="arrival-big-img"><i class="ti ti-tie"></i></div>
+        <div>
+          <div class="arrival-big-badge">New · Men</div>
+          <div class="arrival-big-name">Linen blend kurta — 2026</div>
+          <div class="arrival-big-sub">Breathable linen blend for warm days. Relaxed fit, minimal detailing, available in ivory, sand, and deep navy.</div>
+          <button type="button" class="btn-gold" onclick="showToast('Added to cart!')">Add to cart — ₹1,299</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec alt">
+    <div class="sec-label">More drops</div>
+    <div class="sec-title">Also new this week</div>
+    <div class="prod-grid">
+      <div class="prod-card"><div class="prod-img"><i class="ti ti-shirt"></i></div><div class="prod-info"><div class="prod-cat">Kids · New</div><div class="prod-name">Tie-dye shorts</div><div class="prod-price">₹649</div><button type="button" class="btn-outline-dark prod-add" onclick="showToast('Added to cart!')">Add to cart</button></div></div>
+      <div class="prod-card"><div class="prod-img"><i class="ti ti-shirt"></i></div><div class="prod-info"><div class="prod-cat">Kids · New</div><div class="prod-name">Striped dungaree</div><div class="prod-price">₹849</div><button type="button" class="btn-outline-dark prod-add" onclick="showToast('Added to cart!')">Add to cart</button></div></div>
+      <div class="prod-card"><div class="prod-img"><i class="ti ti-tie"></i></div><div class="prod-info"><div class="prod-cat">Men · New</div><div class="prod-name">Terry polo</div><div class="prod-price">₹799</div><button type="button" class="btn-outline-dark prod-add" onclick="showToast('Added to cart!')">Add to cart</button></div></div>
+      <div class="prod-card"><div class="prod-img"><i class="ti ti-tie"></i></div><div class="prod-info"><div class="prod-cat">Men · New</div><div class="prod-name">Cargo trousers</div><div class="prod-price">₹1,349</div><button type="button" class="btn-outline-dark prod-add" onclick="showToast('Added to cart!')">Add to cart</button></div></div>
+    </div>
+  </div>
+
+  <div class="cta-banner">
+    <div class="sec-label">Never miss a drop</div>
+    <h2>Get <em>early access</em></h2>
+    <p>Sign up and be first to know when new pieces land</p>
+    <button type="button" class="btn-gold" onclick="subscribeNewsletter()">Notify me →</button>
+  </div>
+
+  <footer aria-label="Home page footer">
+    <div class="foot-top">
+      <div><div class="foot-brand-name">Myeonn</div><div class="foot-brand-desc">Premium clothing for kids and men.</div></div>
+      <div class="foot-col"><div class="foot-col-title">Shop</div><a onclick="showPage('kids')">Kids wear</a><a onclick="showPage('men')">Men's wear</a><a onclick="showPage('arrivals')">New arrivals</a></div>
+      <div class="foot-col"><div class="foot-col-title">Help</div><a onclick="showPage('contact')">Contact us</a><a onclick="openInfo('returns')">Returns</a></div>
+      <div class="foot-col"><div class="foot-col-title">Company</div><a onclick="openInfo('about')">About us</a><a onclick="openInfo('privacy')">Privacy</a></div>
+    </div>
+    <div class="foot-bottom"><div class="foot-copy">© 2026 Myeonn</div><div class="foot-social"><i class="ti ti-brand-instagram"></i><i class="ti ti-brand-facebook"></i></div></div>
+  </footer>
+</div>
+
+<!-- ══════════════════════════════════════
+PAGE: LOGIN
+══════════════════════════════════════ -->
+<div class="page" id="page-login">
+  <div class="contact-hero">
+    <div class="sec-label account-hero-label">Account</div>
+    <h1 class="hero-h1 account-hero-title">Welcome back</h1>
+    <p class="account-hero-copy">Sign in to checkout faster and keep your Myeonn details ready</p>
+  </div>
+
+  <div class="sec">
+    <div class="account-grid">
+      <div class="account-card">
+        <div class="sec-label">Your account</div>
+        <div class="sec-title account-card-title">Simple and secure</div>
+        <p class="account-note">Create an account with your name, email, and password. Your password is stored as a secure hash on the backend, and your browser receives a private session cookie.</p>
+        <div class="account-status" id="account-status">You are not signed in yet.</div>
+        <div class="account-actions hidden" id="account-actions">
+          <button type="button" class="btn-dark" onclick="logoutUser()">Sign out</button>
+          <button type="button" class="btn-outline-dark" onclick="showPage('kids')">Continue shopping</button>
+        </div>
+      </div>
+
+      <div class="account-card">
+        <div class="account-tabs">
+          <button type="button" class="account-tab active" id="login-tab" onclick="setAccountMode('login')">Login</button>
+          <button type="button" class="account-tab" id="register-tab" onclick="setAccountMode('register')">Register</button>
+        </div>
+
+        <div class="account-form active" id="login-form">
+          <div class="form-field"><label>Email</label><input id="login-email" type="email" placeholder="you@email.com" autocomplete="email"></div>
+          <div class="form-field"><label>Password</label><div class="password-wrap"><input id="login-password" type="password" placeholder="Your password" autocomplete="current-password"><button type="button" class="password-toggle" onclick="togglePassword('login-password', this)" aria-label="Show password"><i class="ti ti-eye"></i></button></div></div>
+          <button type="button" class="btn-gold" onclick="loginUser()">Login</button>
+        </div>
+
+        <div class="account-form" id="register-form">
+          <div class="form-field"><label>Name</label><input id="register-name" type="text" placeholder="Your name" autocomplete="name"></div>
+          <div class="form-field"><label>Email</label><input id="register-email" type="email" placeholder="you@email.com" autocomplete="email"></div>
+          <div class="form-field"><label>Password</label><div class="password-wrap"><input id="register-password" type="password" placeholder="Minimum 6 characters" autocomplete="new-password"><button type="button" class="password-toggle" onclick="togglePassword('register-password', this)" aria-label="Show password"><i class="ti ti-eye"></i></button></div></div>
+          <button type="button" class="btn-gold" onclick="registerUser()">Create account</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer aria-label="Login page footer">
+    <div class="foot-top">
+      <div><div class="foot-brand-name">Myeonn</div><div class="foot-brand-desc">Premium clothing for kids and men.</div></div>
+      <div class="foot-col"><div class="foot-col-title">Shop</div><a onclick="showPage('kids')">Kids wear</a><a onclick="showPage('men')">Men's wear</a><a onclick="showPage('arrivals')">New arrivals</a></div>
+      <div class="foot-col"><div class="foot-col-title">Help</div><a onclick="showPage('contact')">Contact us</a><a onclick="openInfo('returns')">Returns</a><a onclick="openInfo('sizes')">Size guide</a></div>
+      <div class="foot-col"><div class="foot-col-title">Company</div><a onclick="openInfo('about')">About us</a><a onclick="openInfo('privacy')">Privacy policy</a></div>
+    </div>
+    <div class="foot-bottom"><div class="foot-copy">© 2026 Myeonn</div><div class="foot-social"><i class="ti ti-brand-instagram"></i><i class="ti ti-brand-facebook"></i></div></div>
+  </footer>
+</div>
+
+<!-- ══════════════════════════════════════
+PAGE: CONTACT
+══════════════════════════════════════ -->
+<div class="page" id="page-contact">
+  <div class="contact-hero">
+    <div class="sec-label contact-hero-label">We're here</div>
+    <h1 class="contact-hero-title">Get in touch</h1>
+    <p class="contact-hero-copy">Questions, feedback, or just want to say hello — we'd love to hear from you</p>
+  </div>
+
+  <div class="sec">
+    <div class="contact-grid">
+      <div>
+        <div class="contact-info-card">
+          <div class="sec-label">Find us</div>
+          <div class="sec-title contact-card-title">Store info</div>
+          <div class="cinfo">
+            <div class="cinfo-icon"><i class="ti ti-map-pin"></i></div>
+            <div><div class="cinfo-label">Address</div><div class="cinfo-val">5/286,Sindhu Textile Street,Avinashi,<br>Tiruppur, Tamilnadu 641654</div></div>
+          </div>
+          <div class="cinfo">
+            <div class="cinfo-icon"><i class="ti ti-mail"></i></div>
+            <div><div class="cinfo-label">Email</div><div class="cinfo-val">regalclothingind@gmail.com</div></div>
+          </div>
+          <div class="cinfo">
+            <div class="cinfo-icon"><i class="ti ti-phone"></i></div>
+            <div><div class="cinfo-label">Phone</div><div class="cinfo-val">+91 77089 96667</div></div>
+          </div>
+          <div class="cinfo">
+            <div class="cinfo-icon"><i class="ti ti-clock"></i></div>
+            <div><div class="cinfo-label">Hours</div><div class="cinfo-val">Mon–Sat: 10am – 7pm<br>Sunday: 11am – 5pm</div></div>
+          </div>
+          <div class="cinfo">
+            <div class="cinfo-icon"><i class="ti ti-brand-instagram"></i></div>
+            <div><div class="cinfo-label">Instagram</div><div class="cinfo-val">@myeonn</div></div>
+          </div>
+        </div>
+        <div class="map-placeholder">
+          <i class="ti ti-map-2"></i>
+          <p>Avinashi, Tiruppur, Tamilnadu</p>
+          <p class="map-link">Open in Maps →</p>
+        </div>
+      </div>
+
+      <div class="contact-form-card">
+        <div class="sec-label">Write to us</div>
+        <div class="sec-title contact-form-title">Send a message</div>
+        <div class="form-row">
+          <div class="form-field"><label>First name</label><input id="contact-first-name" type="text" placeholder="Rahul"></div>
+          <div class="form-field"><label>Last name</label><input id="contact-last-name" type="text" placeholder="Sharma"></div>
+        </div>
+        <div class="form-field"><label>Email</label><input id="contact-email" type="email" placeholder="rahul@email.com"></div>
+        <div class="form-field"><label>Phone (optional)</label><input id="contact-phone" type="tel" placeholder="+91 98765 43210"></div>
+        <div class="form-field">
+          <label>Topic</label>
+          <select id="contact-topic">
+            <option>Order enquiry</option>
+            <option>Returns &amp; exchanges</option>
+            <option>Size help</option>
+            <option>Product question</option>
+            <option>Feedback</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="form-field"><label>Message</label><textarea id="contact-message" placeholder="How can we help you?"></textarea></div>
+        <button type="button" class="btn-gold" onclick="submitContact()">Send message →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FAQ -->
+  <div class="sec alt">
+    <div class="sec-label">FAQ</div>
+    <div class="sec-title">Common questions</div>
+    <div class="faq-grid">
+      <div class="faq-card">
+        <div class="faq-question">How long does delivery take?</div>
+        <div class="faq-answer">Standard delivery takes 2–4 working days across India. Express next-day delivery is available in Mumbai and Delhi.</div>
+      </div>
+      <div class="faq-card">
+        <div class="faq-question">What is your return policy?</div>
+        <div class="faq-answer">We accept returns within 15 days of delivery. Items must be unworn with original tags. Refunds are processed in 3–5 working days.</div>
+      </div>
+      <div class="faq-card">
+        <div class="faq-question">Do you have a size guide?</div>
+        <div class="faq-answer">Yes! Each product page has a detailed size guide. For kids, we size by age and height. For men, we follow standard Indian sizing (S to 3XL).</div>
+      </div>
+      <div class="faq-card">
+        <div class="faq-question">Can I track my order?</div>
+        <div class="faq-answer">Yes — you'll receive a tracking link via SMS and email as soon as your order is dispatched. You can also track via the link in your account.</div>
+      </div>
+    </div>
+  </div>
+
+  <footer aria-label="Contact page footer">
+    <div class="foot-top">
+      <div><div class="foot-brand-name">Myeonn</div><div class="foot-brand-desc">Premium clothing for kids and men.</div></div>
+      <div class="foot-col"><div class="foot-col-title">Shop</div><a onclick="showPage('kids')">Kids wear</a><a onclick="showPage('men')">Men's wear</a><a onclick="showPage('arrivals')">New arrivals</a></div>
+      <div class="foot-col"><div class="foot-col-title">Help</div><a onclick="showPage('contact')">Contact us</a><a onclick="openInfo('returns')">Returns</a><a onclick="openInfo('sizes')">Size guide</a></div>
+      <div class="foot-col"><div class="foot-col-title">Company</div><a onclick="openInfo('about')">About us</a><a onclick="openInfo('privacy')">Privacy policy</a></div>
+    </div>
+    <div class="foot-bottom"><div class="foot-copy">© 2026 Myeonn</div><div class="foot-social"><i class="ti ti-brand-instagram"></i><i class="ti ti-brand-facebook"></i></div></div>
+  </footer>
+</div>
+
+<script>
+const cart = [];
+const wishlist = new Set();
+let productCatalog = [];
+let backendOnline = false;
+let currentUser = null;
+const infoContent = {
+  sale: {
+    title: 'Sale',
+    body: '<p>Seasonal offers are available across selected kids and men styles. Look for reduced prices in-store and during weekly online drops.</p><ul><li>Extra 10% off on orders above ₹1,999</li><li>Bundle offers on kids sets</li><li>Clearance pieces are final sale</li></ul>'
+  },
+  shipping: {
+    title: 'Shipping Info',
+    body: '<p>Standard delivery takes 2-4 working days across India. Mumbai and Delhi orders can choose express next-day delivery where available.</p><ul><li>Free shipping on orders above ₹999</li><li>Tracking shared by SMS and email</li><li>Orders dispatch within 24 hours on working days</li></ul>'
+  },
+  returns: {
+    title: 'Returns',
+    body: '<p>Returns are accepted within 15 days of delivery for unworn items with original tags attached.</p><ul><li>Refunds process in 3-5 working days after inspection</li><li>Size exchanges are free once per order</li><li>Final sale items cannot be returned</li></ul>'
+  },
+  sizes: {
+    title: 'Size Guide',
+    body: '<p>Kids sizes are guided by age and height. Men sizes follow standard Indian sizing from S to 3XL.</p><ul><li>Kids 0-4: baby and toddler fits</li><li>Kids 4-8: relaxed playwear fit</li><li>Kids 8-14: pre-teen everyday fit</li><li>Men: choose your regular shirt or T-shirt size</li></ul>'
+  },
+  about: {
+    title: 'About Myeonn',
+    body: '<p>Myeonn makes everyday clothing for kids and men with soft fabrics, practical fits, and a quiet premium feel.</p><p>The collection is designed for families who want clothes that look polished, feel comfortable, and hold up after repeated washes.</p>'
+  },
+  careers: {
+    title: 'Careers',
+    body: '<p>We are building a thoughtful clothing brand from Mumbai. For retail, operations, design, or content roles, send your profile to hello@myeonn.com.</p>'
+  },
+  privacy: {
+    title: 'Privacy Policy',
+    body: '<p>We use customer details only to process orders, provide support, improve service, and share updates customers opt into.</p><ul><li>We never sell customer information</li><li>Payment details are handled by secure payment partners</li><li>You can request account or marketing changes anytime</li></ul>'
+  },
+  terms: {
+    title: 'Terms',
+    body: '<p>By shopping with Myeonn, customers agree to our order, delivery, return, and exchange terms. Product availability and pricing may change without prior notice.</p><p>For help with an order, contact hello@myeonn.com.</p>'
+  }
+};
+
+async function api(path, options = {}) {
+  const response = await fetch(path, {
+    headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
+    ...options
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error || 'Something went wrong.');
+  return data;
+}
+
+async function loadCatalog() {
+  try {
+    productCatalog = await api('/api/products');
+    backendOnline = true;
+  } catch (error) {
+    productCatalog = allProductsFromPage().map(item => ({
+      id: item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
+      name: item.name,
+      price: item.numericPrice,
+      category: item.meta,
+      collection: item.meta.toLowerCase().includes('men') ? 'men' : 'kids',
+      tags: []
+    }));
+    backendOnline = false;
+  }
+}
+
+async function loadSession() {
+  try {
+    const session = await api('/api/session');
+    currentUser = session.user;
+    renderAccount();
+  } catch (error) {
+    currentUser = null;
+    renderAccount();
+  }
+}
+
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-links a').forEach(a => a.classList.remove('active'));
+  const page = document.getElementById('page-' + name);
+  if (page) { page.classList.add('active'); window.scrollTo(0,0); }
+  const navLink = document.getElementById('nav-' + name);
+  if (navLink) navLink.classList.add('active');
+  document.querySelector('.nav-links').classList.remove('open');
+  closePanels();
+  if (name === 'login') renderAccount();
+}
+
+function setFilter(btn) {
+  const section = btn.closest('.sec');
+  const filterText = btn.textContent.trim().toLowerCase();
+  section.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  section.querySelectorAll('.prod-card').forEach(card => {
+    const haystack = card.textContent.toLowerCase();
+    card.style.display = filterText === 'all' || haystack.includes(filterText) ? '' : 'none';
+  });
+  showToast(filterText === 'all' ? 'Showing all products' : 'Filtered: ' + btn.textContent.trim());
+}
+
+let toastTimer;
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  document.getElementById('toast-msg').textContent = msg;
+  toast.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 2500);
+}
+
+function toggleMenu() {
+  document.querySelector('.nav-links').classList.toggle('open');
+}
+
+function openSearch() {
+  showPanel('search-panel');
+  renderSearch();
+  setTimeout(() => document.getElementById('search-input').focus(), 80);
+}
+
+function openCart() {
+  renderCart();
+  showPanel('cart-panel');
+}
+
+function showPanel(id) {
+  closePanels(false);
+  document.getElementById('overlay').classList.add('show');
+  document.getElementById(id).classList.add('show');
+}
+
+function closePanels(hideOverlay = true) {
+  document.querySelectorAll('.panel,.modal').forEach(el => el.classList.remove('show'));
+  if (hideOverlay) document.getElementById('overlay').classList.remove('show');
+}
+
+function productFromButton(btn) {
+  const card = btn.closest('.prod-card,.arrival-big');
+  const name = card.querySelector('.prod-name,.arrival-big-name').textContent.replace(' — 2026','').trim();
+  const priceText = (card.querySelector('.prod-price')?.textContent || btn.textContent).match(/₹[\d,]+/);
+  const price = priceText ? Number(priceText[0].replace(/[₹,]/g,'')) : 0;
+  const meta = card.querySelector('.prod-cat,.arrival-big-badge')?.textContent.trim() || 'Myeonn';
+  const catalogItem = productCatalog.find(item => item.name.toLowerCase() === name.toLowerCase());
+  return { id: catalogItem?.id, name, price: catalogItem?.price || price, meta };
+}
+
+function addToCart(product) {
+  const existing = cart.find(item => item.name === product.name);
+  if (existing) existing.qty += 1;
+  else cart.push({ ...product, qty: 1 });
+  updateCartBadge();
+  showToast(product.name + ' added to cart');
+}
+
+function updateCartBadge() {
+  const count = cart.reduce((sum, item) => sum + item.qty, 0);
+  const badge = document.getElementById('cart-btn');
+  badge.dataset.count = count;
+  badge.classList.toggle('has-items', count > 0);
+}
+
+function renderCart() {
+  const wrap = document.getElementById('cart-items');
+  if (!cart.length) {
+    wrap.innerHTML = '<div class="cart-empty">Your cart is empty. Add a few Myeonn favourites and they will appear here.</div>';
+    document.getElementById('cart-total').textContent = '₹0';
+    return;
+  }
+  wrap.innerHTML = cart.map(item => `
+    <div class="cart-row">
+      <div>
+        <div class="cart-name">${item.name}</div>
+        <div class="cart-meta">${item.meta} · Qty ${item.qty}</div>
+      </div>
+      <div class="cart-name">₹${(item.price * item.qty).toLocaleString('en-IN')}</div>
+    </div>
+  `).join('');
+  const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+  document.getElementById('cart-total').textContent = '₹' + total.toLocaleString('en-IN');
+}
+
+async function checkout() {
+  if (!cart.length) {
+    showToast('Your cart is empty');
+    return;
+  }
+  try {
+    const order = await api('/api/orders', {
+      method: 'POST',
+      body: JSON.stringify({ items: cart, customer: currentUser || {} })
+    });
+    cart.length = 0;
+    updateCartBadge();
+    renderCart();
+    showToast('Order ' + order.id + ' received. Total ₹' + order.total.toLocaleString('en-IN'));
+  } catch (error) {
+    showToast(error.message);
+  }
+}
+
+function allProducts() {
+  if (productCatalog.length) {
+    return productCatalog.map(product => ({
+      id: product.id,
+      name: product.name,
+      price: '₹' + Number(product.price || 0).toLocaleString('en-IN'),
+      numericPrice: Number(product.price || 0),
+      meta: [product.collection, product.category, product.age || product.size].filter(Boolean).join(' · '),
+      card: [...document.querySelectorAll('.prod-card,.arrival-big')].find(card => {
+        const title = card.querySelector('.prod-name,.arrival-big-name')?.textContent.replace(' — 2026','').trim();
+        return title && title.toLowerCase() === product.name.toLowerCase();
+      })
+    }));
+  }
+  return allProductsFromPage();
+}
+
+function allProductsFromPage() {
+  return [...document.querySelectorAll('.prod-card,.arrival-big')].map(card => {
+    const name = card.querySelector('.prod-name,.arrival-big-name').textContent.replace(' — 2026','').trim();
+    const price = card.querySelector('.prod-price')?.textContent || (card.querySelector('button')?.textContent.match(/₹[\d,]+/) || [''])[0];
+    const numericPrice = price ? Number(price.replace(/[₹,]/g,'')) : 0;
+    const meta = card.querySelector('.prod-cat,.arrival-big-badge')?.textContent.trim() || 'Myeonn';
+    return { name, price, numericPrice, meta, card };
+  });
+}
+
+function renderSearch() {
+  const query = document.getElementById('search-input').value.trim().toLowerCase();
+  const results = allProducts().filter(item => !query || (item.name + ' ' + item.meta).toLowerCase().includes(query)).slice(0, 8);
+  document.getElementById('search-results').innerHTML = results.map(item => `
+    <div class="result-row">
+      <div>
+        <div class="result-name">${item.name}</div>
+        <div class="result-meta">${item.meta} · ${item.price || 'Price in store'}</div>
+      </div>
+      <button type="button" class="btn-outline-dark" onclick="jumpToProduct('${item.name.replace(/'/g,"\\'")}')">View</button>
+    </div>
+  `).join('') || '<div class="cart-empty">No products found. Try tee, shirt, hoodie, or kids.</div>';
+}
+
+function jumpToProduct(name) {
+  const item = allProducts().find(product => product.name === name);
+  if (!item || !item.card) {
+    showToast('Product details are available in the latest catalogue.');
+    return;
+  }
+  const page = item.card.closest('.page').id.replace('page-','');
+  showPage(page);
+  setTimeout(() => item.card.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+}
+
+function showWishlist() {
+  document.getElementById('wishlist-btn').classList.toggle('wishlist-on');
+  showToast('Wishlist is ready. Tap products after checkout setup to save favourites.');
+}
+
+function openInfo(key) {
+  const info = infoContent[key];
+  if (!info) return;
+  document.getElementById('info-title').textContent = info.title;
+  document.getElementById('info-body').innerHTML = info.body;
+  closePanels(false);
+  document.getElementById('overlay').classList.add('show');
+  document.getElementById('info-modal').classList.add('show');
+}
+
+async function submitContact() {
+  const payload = {
+    firstName: document.getElementById('contact-first-name').value.trim(),
+    lastName: document.getElementById('contact-last-name').value.trim(),
+    email: document.getElementById('contact-email').value.trim(),
+    phone: document.getElementById('contact-phone').value.trim(),
+    topic: document.getElementById('contact-topic').value,
+    message: document.getElementById('contact-message').value.trim()
+  };
+
+  try {
+    await api('/api/contact', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+    ['contact-first-name','contact-last-name','contact-email','contact-phone','contact-message'].forEach(id => {
+      document.getElementById(id).value = '';
+    });
+    showToast('Message sent. We will reply within 24 hours.');
+  } catch (error) {
+    showToast(error.message);
+  }
+}
+
+async function subscribeNewsletter() {
+  const email = prompt('Enter your email for new arrival alerts');
+  if (!email) return;
+  try {
+    await api('/api/newsletter', {
+      method: 'POST',
+      body: JSON.stringify({ email })
+    });
+    showToast('Thanks. You are on the list.');
+  } catch (error) {
+    showToast(error.message);
+  }
+}
+
+function setAccountMode(mode) {
+  document.getElementById('login-tab').classList.toggle('active', mode === 'login');
+  document.getElementById('register-tab').classList.toggle('active', mode === 'register');
+  document.getElementById('login-form').classList.toggle('active', mode === 'login');
+  document.getElementById('register-form').classList.toggle('active', mode === 'register');
+}
+
+function togglePassword(inputId, button) {
+  const input = document.getElementById(inputId);
+  const icon = button.querySelector('i');
+  const showing = input.type === 'text';
+  input.type = showing ? 'password' : 'text';
+  icon.className = showing ? 'ti ti-eye' : 'ti ti-eye-off';
+  button.setAttribute('aria-label', showing ? 'Show password' : 'Hide password');
+}
+
+function renderAccount() {
+  const status = document.getElementById('account-status');
+  const actions = document.getElementById('account-actions');
+  const accountBtn = document.getElementById('account-btn');
+  const navLogin = document.getElementById('nav-login');
+  const navLoginLabel = document.getElementById('nav-login-label');
+  const navAccountName = document.getElementById('nav-account-name');
+  if (!status || !actions || !accountBtn || !navLogin || !navLoginLabel || !navAccountName) return;
+
+  if (currentUser) {
+    status.innerHTML = `Signed in as <strong>${currentUser.name}</strong><br>${currentUser.email}`;
+    actions.style.display = 'flex';
+    accountBtn.classList.add('wishlist-on');
+    navLoginLabel.textContent = 'Account';
+    navAccountName.textContent = ' · ' + currentUser.name;
+    navAccountName.classList.add('show');
+  } else {
+    status.textContent = 'You are not signed in yet.';
+    actions.style.display = 'none';
+    accountBtn.classList.remove('wishlist-on');
+    navLoginLabel.textContent = 'Login';
+    navAccountName.textContent = '';
+    navAccountName.classList.remove('show');
+  }
+}
+
+async function loginUser() {
+  try {
+    const result = await api('/api/login', {
+      method: 'POST',
+      body: JSON.stringify({
+        email: document.getElementById('login-email').value.trim(),
+        password: document.getElementById('login-password').value
+      })
+    });
+    currentUser = result.user;
+    document.getElementById('login-password').value = '';
+    renderAccount();
+    showToast('Welcome back, ' + currentUser.name + '.');
+    showPage('home');
+  } catch (error) {
+    showToast(error.message);
+  }
+}
+
+async function registerUser() {
+  try {
+    const result = await api('/api/register', {
+      method: 'POST',
+      body: JSON.stringify({
+        name: document.getElementById('register-name').value.trim(),
+        email: document.getElementById('register-email').value.trim(),
+        password: document.getElementById('register-password').value
+      })
+    });
+    currentUser = result.user;
+    ['register-name','register-email','register-password'].forEach(id => {
+      document.getElementById(id).value = '';
+    });
+    renderAccount();
+    showToast('Account created. Welcome, ' + currentUser.name + '.');
+    showPage('home');
+  } catch (error) {
+    showToast(error.message);
+  }
+}
+
+async function logoutUser() {
+  try {
+    await api('/api/logout', { method: 'POST', body: '{}' });
+  } catch (error) {
+    // Local UI should still reset if the session was already gone.
+  }
+  currentUser = null;
+  renderAccount();
+  showToast('Signed out.');
+}
+
+document.addEventListener('click', event => {
+  const btn = event.target.closest('button');
+  if (!btn || !btn.textContent.toLowerCase().includes('add to cart')) return;
+  event.preventDefault();
+  event.stopImmediatePropagation();
+  addToCart(productFromButton(btn));
+}, true);
+
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape') closePanels();
+});
+
+// Set initial active nav
+document.getElementById('nav-home').classList.add('active');
+updateCartBadge();
+loadCatalog();
+loadSession();
+</script>
+</body>
+</html>

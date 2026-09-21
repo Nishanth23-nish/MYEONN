@@ -1,0 +1,74 @@
+[
+  {
+    "token": "9972738c346a618b441404f76a653fa4be9482d5b9c050e10b06d3c202d89313",
+    "adminId": "admin-1",
+    "createdAt": "2026-09-13T17:06:04.329Z",
+    "expiresAt": "2026-09-14T05:06:04.330Z"
+  },
+  {
+    "token": "4c5c9e71d5c02d43d50dcfd998895ff1c66511c3b083833facef26f02c53ca19",
+    "adminId": "admin-1",
+    "createdAt": "2026-09-13T17:16:13.737Z",
+    "expiresAt": "2026-09-14T05:16:13.737Z"
+  },
+  {
+    "token": "5ab871acf6f6f7509a2d4c373040da7e53f1fb50e207a4b75b1efe2b08df75b3",
+    "adminId": "admin-1",
+    "createdAt": "2026-09-13T17:20:42.751Z",
+    "expiresAt": "2026-09-14T05:20:42.751Z"
+  },
+  {
+    "token": "91807322d0d9fe2cbe7546f69668161166e00ca7884477cdb0dbba502f839930",
+    "adminId": "admin-1",
+    "createdAt": "2026-09-13T17:21:12.710Z",
+    "expiresAt": "2026-09-14T05:21:12.710Z"
+  },
+  {
+    "token": "3e1c6602683b5a2eae5a638608df4d6e736aebc7f19f5a7538b71297013d9538",
+    "adminId": "admin-1",
+    "createdAt": "2026-09-13T17:31:38.208Z",
+    "expiresAt": "2026-09-14T05:31:38.208Z"
+  },
+  {
+    "token": "78e826851e07a72c5bc4ddd9d06f31705412cf5323f3cf99a63baafe0c24c8f4",
+    "adminId": "admin-1",
+    "createdAt": "2026-09-13T17:31:47.216Z",
+    "expiresAt": "2026-09-14T05:31:47.216Z"
+  },
+  {
+    "token": "dd40e10ce826d7a142a27e18462cf3c4c0dbf184243303aa45ff7ec1a3c62899",
+    "adminId": "admin-1",
+    "createdAt": "2026-09-13T17:32:19.038Z",
+    "expiresAt": "2026-09-14T05:32:19.038Z"
+  },
+  {
+    "token": "fc610268db01cfab277f1f4fe0f40998fdc07b96e2c3149520853475b95fac5f",
+    "adminId": "admin-1",
+    "createdAt": "2026-09-13T17:38:50.591Z",
+    "expiresAt": "2026-09-14T05:38:50.591Z"
+  },
+  {
+    "token": "4b0e3563915c6aa0becc7a33305891741512081fc130cfc38021a45b602dece4",
+    "adminId": "admin-1",
+    "createdAt": "2026-09-14T04:25:00.522Z",
+    "expiresAt": "2026-09-14T16:25:00.522Z"
+  },
+  {
+    "token": "612c96d945cc00569ab7350742adf0a0d1873fd8f7c588cabf65530fb55e11af",
+    "adminId": "admin-1",
+    "createdAt": "2026-09-14T09:10:11.749Z",
+    "expiresAt": "2026-09-14T21:10:11.749Z"
+  },
+  {
+    "token": "6eb9132babfd7c43583a6bfafa20b81581f41e17967688a19620fd746426c488",
+    "adminId": "admin-1",
+    "createdAt": "2026-09-14T09:12:28.251Z",
+    "expiresAt": "2026-09-14T21:12:28.251Z"
+  },
+  {
+    "token": "70d0ea6a3d09086b8c46f6f9ff568fe33856085091f333c0a57763db79979629",
+    "adminId": "admin-1",
+    "createdAt": "2026-09-14T09:45:39.027Z",
+    "expiresAt": "2026-09-14T21:45:39.027Z"
+  }
+]

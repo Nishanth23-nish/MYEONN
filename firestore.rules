@@ -1,0 +1,44 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function admin() {
+      return signedIn() && request.auth.token.email in ["admin@myeonn.com", "myeonnadmin@gmail.com"];
+    }
+
+    match /products/{productId} {
+      allow read: if true;
+      allow create, update: if admin();
+      allow delete: if false;
+    }
+
+    match /orders/{orderId} {
+      allow create: if true;
+      allow read, update: if admin();
+      allow delete: if false;
+    }
+
+    match /users/{userId} {
+      allow create: if signedIn() && request.auth.uid == userId;
+      allow read, update: if signedIn() && request.auth.uid == userId;
+      allow delete: if false;
+    }
+
+    match /contacts/{messageId} {
+      allow create: if true;
+      allow read: if admin();
+      allow update, delete: if false;
+    }
+
+    match /newsletter/{emailId} {
+      allow create: if true;
+      allow read: if admin();
+      allow update, delete: if false;
+    }
+  }
+}
+

@@ -1,0 +1,25 @@
+{
+  "name": "myeonn-store",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Myeonn clothing website with a React frontend and lightweight Node backend.",
+  "main": "server.js",
+  "scripts": {
+    "backend": "node server.js",
+    "dev": "vite --host 127.0.0.1",
+    "build": "vite build",
+    "start": "node server.js",
+    "firebase:deploy": "firebase deploy",
+    "firebase:deploy:site": "npm run build && firebase deploy --only hosting"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "^5.0.0",
+    "firebase": "^12.19.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "vite": "^7.0.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

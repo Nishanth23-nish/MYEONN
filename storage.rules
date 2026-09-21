@@ -1,0 +1,20 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    function admin() {
+      return request.auth != null && request.auth.token.email in ["admin@myeonn.com", "myeonnadmin@gmail.com"];
+    }
+
+    match /products/{fileName} {
+      allow read: if true;
+      allow write: if admin();
+    }
+
+    match /{allPaths=**} {
+      allow read: if true;
+      allow write: if admin();
+    }
+  }
+}
+

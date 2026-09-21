@@ -1,0 +1,20 @@
+[
+  {
+    "token": "125a22376b2175710254f4f3ae32a60c899a12d4438a8a42be43258a1c762cd5",
+    "userId": "7b3f50c0-d7c7-4ceb-9645-d9bbdac78f9b",
+    "createdAt": "2026-09-13T09:01:32.178Z",
+    "expiresAt": "2026-09-20T09:01:32.178Z"
+  },
+  {
+    "token": "3f0a2bab00efa91c603752f14ac295f2e2fbfb8ef8c5fdc4b5c99db6623e003c",
+    "userId": "7b3f50c0-d7c7-4ceb-9645-d9bbdac78f9b",
+    "createdAt": "2026-09-13T09:02:53.609Z",
+    "expiresAt": "2026-09-20T09:02:53.609Z"
+  },
+  {
+    "token": "49e787c01435d1e0e9ae91e6229ff005ecc3a1e4fe830e5744f9af468bb983a3",
+    "userId": "7b3f50c0-d7c7-4ceb-9645-d9bbdac78f9b",
+    "createdAt": "2026-09-14T04:19:33.672Z",
+    "expiresAt": "2026-09-21T04:19:33.672Z"
+  }
+]

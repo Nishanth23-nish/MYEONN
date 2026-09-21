@@ -1,0 +1,41 @@
+[
+  {
+    "id": "MYN-ACDE105A",
+    "createdAt": "2026-09-13T16:58:37.391Z",
+    "status": "received",
+    "customer": {
+      "name": "Nishanth S",
+      "email": "nishanth@gmail.com",
+      "phone": "9488245586",
+      "address": "3/260, RAYAMPALAYAM, SAKTHI NAGAR, AVINASHI-641654",
+      "city": "Tiruppur",
+      "pincode": "641654",
+      "userId": "7b3f50c0-d7c7-4ceb-9645-d9bbdac78f9b",
+      "account": {
+        "id": "7b3f50c0-d7c7-4ceb-9645-d9bbdac78f9b",
+        "name": "Nishanth S",
+        "email": "nishanth@gmail.com",
+        "createdAt": "2026-09-13T09:01:32.176Z"
+      }
+    },
+    "items": [
+      {
+        "id": "Aura-hoodie",
+        "name": "Aura",
+        "price": 499,
+        "qty": 1,
+        "lineTotal": 499
+      },
+      {
+        "id": "Alaska-",
+        "name": "Alaska",
+        "price": 449,
+        "qty": 1,
+        "lineTotal": 449
+      }
+    ],
+    "subtotal": 948,
+    "shipping": 99,
+    "total": 1047
+  }
+]

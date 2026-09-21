@@ -1,0 +1,289 @@
+[
+  {
+    "id": "falcan-hoodie",
+    "name": "Falcan",
+    "collection": "kids",
+    "category": "T Shirt",
+    "age": "Ages 5-16",
+    "size": "5-16",
+    "price": 525,
+    "images": ["images/14 Black 1(White) 1(F).png",
+    "images/Eagle Black 2 (White) Face 1.png",
+    "images/Eagle Black 3 (White) Face 1.png"],
+    "tags": [
+      "hoodie",
+      "black",
+      "white",
+      "kids",
+      "falcon"
+    ],
+    "stock": 50,
+    "updatedAt": "2026-09-13T17:38:50.644Z",
+    "updatedBy": {
+      "id": "admin-1",
+      "name": "Myeonn Admin",
+      "email": "admin@myeonn.com",
+      "role": "admin"
+    }
+  },
+  {
+    "id": "Aura-hoodie",
+    "name": "Aura",
+    "collection": "kids",
+    "category": "Tops",
+    "age": "Ages 5-16",
+    "price": 499,
+    "images": ["images/13 Brown 1(White) 1(F).jpg",
+    "images/13 Brown 2(White) 1.jpg",
+    "images/13 Brown 3(White) 1(B).png"],
+    "tags": [
+      "hoodie",
+      "Brown",
+      "Green",
+      "kids",
+      "Aura"
+    ],
+    "stock": 50
+  },
+  {
+    "id": "Ten-hoodie",
+    "name": "Ten",
+    "collection": "kids",
+    "category": "Tops",
+    "age": "Ages 5-16",
+    "price": 486,
+    "images": ["images/Ten Yellow 1(White) Face 1.png",
+    "images/Ten Yellow 2(White) Face 1.png",
+    "images/Ten Yellow 3(White) Face 1.png"],
+    "tags": ["hoodie","Yellow","Green","kids","Ten"
+    ],
+    "stock": 50
+  },
+  {
+    "id": "Alaska-hoodie",
+    "name": "Alaska",
+    "collection": "kids",
+    "category": "Tops",
+    "age": "Ages 5-16",
+    "price": 449,
+    "images": ["images/ALASKA FRONT 2.jpg", 
+    "images/ALASKA BACK 2.jpg"],
+    "tags": [
+      "hoodie",
+      "toddler",
+      "tops",
+      "Alaska"
+    ],
+    "stock": 50
+  },
+  {
+    "id": "Los-Angeles-hoodie",
+    "name": "Los Angeles",
+    "collection": "kids",
+    "category": "Tops",
+    "age": "Ages 5-16",
+    "price": 449,
+    "images": ["images/Los Green 1(White) Face 1.png",
+    "images/Los Green 3(White) Face 1.png",
+    "images/Los Green 2(White) Face 1.png"
+    ],
+    "tags": [
+      "hoodie",
+      "toddler",
+      "tops",
+      "Los Angeles"
+    ],
+    "stock": 50
+  },
+  {
+    "id": "fleece-hoodie",
+    "name": "Fleece hoodie",
+    "collection": "kids",
+    "category": "Winter",
+    "age": "Ages 2-10",
+    "price": 999,
+    "tags": [
+      "winter",
+      "hoodie",
+      "fleece"
+    ],
+    "stock": 50
+  },
+  {
+    "id": "onesie-3-pack",
+    "name": "Onesie 3-pack",
+    "collection": "kids",
+    "category": "Sets",
+    "age": "Ages 0-4",
+    "price": 749,
+    "tags": [
+      "onesie",
+      "baby",
+      "sets"
+    ],
+    "stock": 50
+  },
+  {
+    "id": "Zipper",
+    "name": "zipper lavender",
+    "collection": "men",
+    "category": "T-shirts",
+    "size": "S-XXL",
+    "price": 654,
+    "images": ["images/20Artboard 1.jpg",
+    "images/20Artboard 2.jpg",
+    "images/20Artboard 3.jpg"],
+    "tags": [
+      "zipper",
+      "T-shirts",
+      "bestseller"
+    ],
+    "stock": 50
+  },
+  {
+    "id": "slim-chinos",
+    "name": "Slim chinos",
+    "collection": "men",
+    "category": "Trousers",
+    "size": "28-36",
+    "price": 654,
+    "tags": [
+      "chinos",
+      "trousers",
+      "bottoms"
+    ],
+    "stock": 50
+  },
+  {
+    "id": "classic-polo",
+    "name": "Classic polo",
+    "collection": "men",
+    "category": "T-shirts",
+    "size": "S-XXL",
+    "price": 699,
+    "tags": [
+      "polo",
+      "tshirt",
+      "casuals"
+    ],
+    "stock": 50
+  },
+  {
+    "id": "oxford-shirt",
+    "name": "Oxford shirt",
+    "collection": "men",
+    "category": "Formals",
+    "size": "S-XXL",
+    "price": 1399,
+    "tags": [
+      "formal",
+      "shirt",
+      "office"
+    ],
+    "stock": 50
+  },
+  {
+    "id": "weekend-joggers",
+    "name": "Weekend joggers",
+    "collection": "men",
+    "category": "Casuals",
+    "size": "S-3XL",
+    "price": 999,
+    "tags": [
+      "joggers",
+      "casuals"
+    ],
+    "stock": 50
+  },
+  {
+    "id": "check-flannel",
+    "name": "Check flannel",
+    "collection": "men",
+    "category": "Shirts",
+    "size": "S-XXL",
+    "price": 1099,
+    "tags": [
+      "flannel",
+      "shirt",
+      "check"
+    ],
+    "stock": 50
+  },
+  {
+    "id": "summer-print-tee",
+    "name": "Summer print tee",
+    "collection": "kids",
+    "category": "New",
+    "age": "Ages 2-12",
+    "price": 549,
+    "tags": [
+      "new",
+      "summer",
+      "tee"
+    ],
+    "stock": 50
+  },
+  {
+    "id": "linen-blend-kurta",
+    "name": "Linen blend kurta",
+    "collection": "men",
+    "category": "New",
+    "size": "S-XXL",
+    "price": 1299,
+    "tags": [
+      "new",
+      "kurta",
+      "linen"
+    ],
+    "stock": 50
+  },
+  {
+    "id": "tie-dye-shorts",
+    "name": "Tie-dye shorts",
+    "collection": "kids",
+    "category": "New",
+    "price": 649,
+    "tags": [
+      "new",
+      "shorts"
+    ],
+    "stock": 50
+  },
+  {
+    "id": "striped-dungaree",
+    "name": "Striped dungaree",
+    "collection": "kids",
+    "category": "New",
+    "price": 849,
+    "tags": [
+      "new",
+      "dungaree"
+    ],
+    "stock": 50
+  },
+  {
+    "id": "terry-polo",
+    "name": "Terry polo",
+    "collection": "men",
+    "category": "New",
+    "price": 799,
+    "tags": [
+      "new",
+      "polo"
+    ],
+    "stock": 50
+  },
+  {
+    "id": "cargo-trousers",
+    "name": "Cargo trousers",
+    "collection": "men",
+    "category": "New",
+    "price": 1349,
+    "tags": [
+      "new",
+      "cargo",
+      "trousers"
+    ],
+    "stock": 50
+  }
+]
