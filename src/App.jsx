@@ -26,6 +26,7 @@ const productMeta = product => [product.category, product.age || product.size].f
 const paymentMethodLabel = order => order?.customer?.paymentMethod || order?.paymentMethod || 'Online payment';
 const defaultStock = () => 50;
 const localOrdersKey = 'myeonn_customer_orders';
+const cartStorageKey = 'myeonn_cart';
 const kidsSizeOptions = ['5-6', '7-8', '9-10', '11-12', '13-14', '15-16'];
 const adultSizeOptions = ['S', 'M', 'L', 'XL'];
 const routePages = ['home', 'kids', 'men', 'arrivals', 'contact', 'login', 'orders', 'checkout', 'admin'];
@@ -109,6 +110,23 @@ function calculateStockRows(products, orders) {
     const status = available === 0 ? 'out' : available <= 5 ? 'low' : 'ready';
     return { ...product, opening, sold, available, status };
   });
+}
+
+function calculateOrderTotals(items, couponCode = '') {
+  const subtotal = (items || []).reduce((sum, item) => sum + Number(item.price || 0) * Number(item.qty || 0), 0);
+  const coupon = String(couponCode || '').trim().toUpperCase();
+  const discount = coupon === 'WELCOME10' ? Math.min(Math.round(subtotal * 0.1), 150) : 0;
+  const shipping = subtotal - discount >= 999 ? 0 : 99;
+  return { subtotal, discount, shipping, total: Math.max(subtotal - discount + shipping, 0), coupon: discount ? coupon : '' };
+}
+
+function readCart() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(cartStorageKey) || '[]');
+    return Array.isArray(saved) ? saved.filter(item => item?.id && Number(item.qty) > 0) : [];
+  } catch {
+    return [];
+  }
 }
 
 function ordersForUser(orders, user) {
@@ -271,18 +289,18 @@ async function supabaseApi(path, options = {}) {
 
   if (path === '/api/orders' && method === 'POST') {
     const items = (body.items || []).map(item => ({ ...item, lineTotal: Number(item.price || 0) * Number(item.qty || 0) }));
-    const subtotal = items.reduce((sum, item) => sum + item.lineTotal, 0);
-    const shipping = subtotal >= 999 ? 0 : 99;
+    const totals = calculateOrderTotals(items, body.customer?.couponCode);
     const order = {
       id: `MYN-${crypto.randomUUID().slice(0, 8).toUpperCase()}`,
       created_at: new Date().toISOString(),
       status: 'received',
       customer: body.customer || {},
       items,
-      subtotal,
-      shipping,
-      total: subtotal + shipping
+      subtotal: totals.subtotal,
+      shipping: totals.shipping,
+      total: totals.total
     };
+    order.customer = { ...order.customer, couponCode: totals.coupon, discount: totals.discount };
     return supabaseSaveOrder(order);
   }
 
@@ -385,18 +403,18 @@ async function firebaseApi(path, options = {}) {
 
   if (path === '/api/orders' && method === 'POST') {
     const items = (body.items || []).map(item => ({ ...item, lineTotal: Number(item.price || 0) * Number(item.qty || 0) }));
-    const subtotal = items.reduce((sum, item) => sum + item.lineTotal, 0);
-    const shipping = subtotal >= 999 ? 0 : 99;
+    const totals = calculateOrderTotals(items, body.customer?.couponCode);
     const order = {
       id: `MYN-${crypto.randomUUID().slice(0, 8).toUpperCase()}`,
       createdAt: new Date().toISOString(),
       status: 'received',
       customer: body.customer || {},
       items,
-      subtotal,
-      shipping,
-      total: subtotal + shipping
+      subtotal: totals.subtotal,
+      shipping: totals.shipping,
+      total: totals.total
     };
+    order.customer = { ...order.customer, couponCode: totals.coupon, discount: totals.discount };
     await setDoc(doc(db, 'orders', order.id), { ...order, createdAt: serverTimestamp() });
     return order;
   }
@@ -428,10 +446,30 @@ function orderFromDoc(snapshot) {
   return { ...data, id: data.id || snapshot.id, createdAt };
 }
 
+class StoreErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { error };
+  }
+
+  render() {
+    if (!this.state.error) return this.props.children;
+    return <main className="store-error"><div><div className="sec-label">Myeonn</div><h1>We could not load the store</h1><p>Please refresh once. If this continues, return to the home page and try again.</p><button className="btn-gold" onClick={() => window.location.assign('/')}>Return home</button><small>{this.state.error?.message || 'Unexpected store error.'}</small></div></main>;
+  }
+}
+
 export default function App() {
+  return <StoreErrorBoundary><StorefrontApp /></StoreErrorBoundary>;
+}
+
+function StorefrontApp() {
   const [page, setPage] = useState(pageFromLocation);
   const [products, setProducts] = useState(useSupabaseBackend ? [] : fallbackProducts);
-  const [cart, setCart] = useState([]);
+  const [cart, setCart] = useState(readCart);
   const [toast, setToast] = useState('');
   const [panel, setPanel] = useState(null);
   const [infoKey, setInfoKey] = useState(null);
@@ -509,6 +547,10 @@ export default function App() {
     return () => clearTimeout(timer);
   }, [toast]);
 
+  useEffect(() => {
+    localStorage.setItem(cartStorageKey, JSON.stringify(cart));
+  }, [cart]);
+
   const showPage = nextPage => {
     setPage(nextPage);
     const nextPath = nextPage === 'home' || nextPage === 'admin' ? '/' : `/${nextPage}`;
@@ -553,6 +595,20 @@ export default function App() {
     setToast(`${itemToRemove.name} removed from cart`);
   };
 
+  const updateCartQuantity = (itemToUpdate, nextQuantity) => {
+    const qty = Number(nextQuantity);
+    if (!Number.isInteger(qty) || qty < 1) {
+      removeFromCart(itemToUpdate);
+      return;
+    }
+    const stock = stockByProduct[itemToUpdate.id];
+    if (stock && qty > stock.available) {
+      setToast(`${itemToUpdate.name} has only ${stock.available} left in stock.`);
+      return;
+    }
+    setCart(items => items.map(item => item.id === itemToUpdate.id && item.size === itemToUpdate.size ? { ...item, qty } : item));
+  };
+
   const placeOrder = async customer => {
     if (!cart.length) {
       setToast('Your cart is empty');
@@ -593,7 +649,7 @@ export default function App() {
       <Toast message={toast} />
       <div className={`overlay ${panel || infoKey || selectedProduct || sizeProduct ? 'show' : ''}`} onClick={closePanels} />
       <SearchPanel show={panel === 'search'} query={query} setQuery={setQuery} results={searchResults} viewProduct={product => showProduct(product, showPage)} close={closePanels} />
-      <CartPanel show={panel === 'cart'} cart={cart} checkout={openCheckout} removeItem={removeFromCart} close={closePanels} />
+      <CartPanel show={panel === 'cart'} cart={cart} checkout={openCheckout} removeItem={removeFromCart} updateQuantity={updateCartQuantity} close={closePanels} />
       <InfoModal info={infoKey ? infoContent[infoKey] : null} close={closePanels} />
       <ProductDetail product={selectedProduct} stock={selectedProduct ? stockByProduct[selectedProduct.id] : null} addToCart={addToCart} close={closePanels} />
       <SizeModal product={sizeProduct} chooseSize={size => addSizedToCart(sizeProduct, size)} close={closePanels} />
@@ -1247,9 +1303,6 @@ function LoginPage({ user, setUser, setAdmin, showPage, setToast }) {
 }
 
 function CheckoutPage({ user, cart, placeOrder, showPage, setToast }) {
-  const subtotal = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
-  const shipping = subtotal >= 999 ? 0 : 99;
-  const total = subtotal + shipping;
   const [form, setForm] = useState({
     name: user?.name || '',
     email: user?.email || '',
@@ -1261,17 +1314,34 @@ function CheckoutPage({ user, cart, placeOrder, showPage, setToast }) {
     state: '',
     pincode: '',
     country: 'India',
-    paymentMethod: 'Online payment',
-    paymentProvider: 'UPI / Card / Netbanking',
-    paymentStatus: 'Payment pending'
+    paymentMethod: 'Cash on delivery',
+    paymentProvider: 'Pay on delivery',
+    paymentStatus: 'Payment due on delivery'
   });
+  const [couponInput, setCouponInput] = useState('');
+  const [couponCode, setCouponCode] = useState('');
+  const totals = calculateOrderTotals(cart, couponCode);
+
+  const selectPayment = paymentMethod => setForm(current => paymentMethod === 'Cash on delivery'
+    ? { ...current, paymentMethod, paymentProvider: 'Pay on delivery', paymentStatus: 'Payment due on delivery' }
+    : { ...current, paymentMethod, paymentProvider: 'UPI / Card / Netbanking', paymentStatus: 'Payment pending' });
+
+  const applyCoupon = () => {
+    if (couponInput.trim().toUpperCase() === 'WELCOME10') {
+      setCouponCode('WELCOME10');
+      setToast('WELCOME10 applied. You saved 10%, up to ₹150.');
+    } else {
+      setCouponCode('');
+      setToast('That coupon is not available. Try WELCOME10.');
+    }
+  };
 
   const submit = () => {
     if (!form.name || !form.email || !form.phone || !form.address || !form.city || !form.state || !form.pincode) {
       setToast('Please fill all delivery details.');
       return;
     }
-    placeOrder({ ...form, userId: user?.id || null });
+    placeOrder({ ...form, userId: user?.id || null, couponCode: totals.coupon, discount: totals.discount });
   };
 
   if (!cart.length) {
@@ -1280,7 +1350,7 @@ function CheckoutPage({ user, cart, placeOrder, showPage, setToast }) {
 
   return <main className="page active" id="page-checkout">
     <section className="contact-hero"><div className="sec-label" style={{ color: '#D4AF82', textAlign: 'center' }}>Checkout</div><h1 className="hero-h1" style={{ color: '#F5F0E8', textAlign: 'center', fontSize: 44 }}>Complete your order</h1><p style={{ color: '#A89F93', textAlign: 'center', marginTop: 12, fontSize: 14 }}>Review your cart and add delivery details</p></section>
-    <section className="sec"><div className="checkout-grid"><div className="checkout-card"><div className="sec-label">Delivery</div><div className="sec-title" style={{ marginBottom: 24 }}>Shipping details</div><Field label="Full name" value={form.name} onChange={name => setForm({ ...form, name })} placeholder="Your name" /><Field label="Email" type="email" value={form.email} onChange={email => setForm({ ...form, email })} placeholder="you@email.com" /><div className="form-row"><Field label="Phone number" type="tel" value={form.phone} onChange={phone => setForm({ ...form, phone })} placeholder="+91 98765 43210" /><Field label="Alternate phone" type="tel" value={form.altPhone} onChange={altPhone => setForm({ ...form, altPhone })} placeholder="+91 98765 43210" /></div><div className="form-field"><label>Address</label><textarea value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} placeholder="House number, street, area" /></div><Field label="Landmark / nearby place" value={form.landmark} onChange={landmark => setForm({ ...form, landmark })} placeholder="Near school, temple, main road" /><div className="form-row"><Field label="City" value={form.city} onChange={city => setForm({ ...form, city })} placeholder="Mumbai" /><Field label="State" value={form.state} onChange={state => setForm({ ...form, state })} placeholder="Maharashtra" /></div><div className="form-row"><Field label="Pincode" value={form.pincode} onChange={pincode => setForm({ ...form, pincode })} placeholder="400050" /><Field label="Country" value={form.country} onChange={country => setForm({ ...form, country })} placeholder="India" /></div><div className="payment-choice"><div className="sec-label">Payment</div><div className="payment-choice-title">Payment method</div><div className="payment-options"><button type="button" className="active"><i className="ti ti-credit-card" /><span>Online payment</span><small>UPI, card, netbanking</small></button></div><div className="payment-note">Online payment selected. The payment request will be handled with this order confirmation.</div></div><div className="account-actions"><button className="btn-gold" onClick={submit}>Confirm order & pay online</button><button className="btn-outline-dark" onClick={() => showPage('kids')}>Continue shopping</button></div></div><div className="checkout-card"><div className="sec-label">Summary</div><div className="sec-title" style={{ marginBottom: 24 }}>Order total</div><div className="checkout-items">{cart.map(item => <div className="checkout-row" key={`${item.id}-${item.size || 'size'}`}><div><div className="cart-name">{item.name}</div><div className="cart-meta">{item.meta} · Size {item.size || 'Not selected'} · Qty {item.qty}</div></div><div className="cart-name">{price(item.price * item.qty)}</div></div>)}</div><div className="checkout-totals"><div><span>Payment</span><strong>{form.paymentMethod}</strong></div><div><span>Subtotal</span><strong>{price(subtotal)}</strong></div><div><span>Shipping</span><strong>{shipping ? price(shipping) : 'Free'}</strong></div><div className="checkout-grand"><span>Total</span><strong>{price(total)}</strong></div></div></div></div></section>
+    <section className="sec"><div className="checkout-grid"><div className="checkout-card"><div className="sec-label">Delivery</div><div className="sec-title" style={{ marginBottom: 24 }}>Shipping details</div><Field label="Full name" value={form.name} onChange={name => setForm({ ...form, name })} placeholder="Your name" /><Field label="Email" type="email" value={form.email} onChange={email => setForm({ ...form, email })} placeholder="you@email.com" /><div className="form-row"><Field label="Phone number" type="tel" value={form.phone} onChange={phone => setForm({ ...form, phone })} placeholder="+91 98765 43210" /><Field label="Alternate phone" type="tel" value={form.altPhone} onChange={altPhone => setForm({ ...form, altPhone })} placeholder="+91 98765 43210" /></div><div className="form-field"><label>Address</label><textarea value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} placeholder="House number, street, area" /></div><Field label="Landmark / nearby place" value={form.landmark} onChange={landmark => setForm({ ...form, landmark })} placeholder="Near school, temple, main road" /><div className="form-row"><Field label="City" value={form.city} onChange={city => setForm({ ...form, city })} placeholder="Mumbai" /><Field label="State" value={form.state} onChange={state => setForm({ ...form, state })} placeholder="Maharashtra" /></div><div className="form-row"><Field label="Pincode" value={form.pincode} onChange={pincode => setForm({ ...form, pincode })} placeholder="400050" /><Field label="Country" value={form.country} onChange={country => setForm({ ...form, country })} placeholder="India" /></div><div className="payment-choice"><div className="sec-label">Payment</div><div className="payment-choice-title">Choose payment method</div><div className="payment-options"><button type="button" className={form.paymentMethod === 'Cash on delivery' ? 'active' : ''} onClick={() => selectPayment('Cash on delivery')}><i className="ti ti-cash" /><span>Cash on delivery</span><small>Pay when your order arrives</small></button><button type="button" className={form.paymentMethod === 'Online payment' ? 'active' : ''} onClick={() => selectPayment('Online payment')}><i className="ti ti-credit-card" /><span>Online payment</span><small>UPI, card, netbanking</small></button></div><div className="payment-note">{form.paymentMethod === 'Cash on delivery' ? 'Your order will be confirmed first. Payment is collected at delivery.' : 'Online payment is selected. A payment gateway must be connected before live charges can be accepted.'}</div></div><div className="account-actions"><button className="btn-gold" onClick={submit}>Place order</button><button className="btn-outline-dark" onClick={() => showPage('kids')}>Continue shopping</button></div></div><div className="checkout-card"><div className="sec-label">Summary</div><div className="sec-title" style={{ marginBottom: 24 }}>Order total</div><div className="checkout-items">{cart.map(item => <div className="checkout-row" key={`${item.id}-${item.size || 'size'}`}><div><div className="cart-name">{item.name}</div><div className="cart-meta">{item.meta} · Size {item.size || 'Not selected'} · Qty {item.qty}</div></div><div className="cart-name">{price(item.price * item.qty)}</div></div>)}</div><div className="coupon-box"><label htmlFor="coupon-code">Coupon code</label><div><input id="coupon-code" value={couponInput} onChange={event => setCouponInput(event.target.value)} placeholder="WELCOME10" /><button className="btn-outline-dark" onClick={applyCoupon}>Apply</button></div><small>Use WELCOME10 to save 10%, up to ₹150.</small></div><div className="checkout-totals"><div><span>Payment</span><strong>{form.paymentMethod}</strong></div><div><span>Subtotal</span><strong>{price(totals.subtotal)}</strong></div>{totals.discount > 0 && <div><span>Discount ({totals.coupon})</span><strong>-{price(totals.discount)}</strong></div>}<div><span>Shipping</span><strong>{totals.shipping ? price(totals.shipping) : 'Free'}</strong></div><div className="checkout-grand"><span>Total</span><strong>{price(totals.total)}</strong></div></div></div></div></section>
   </main>;
 }
 
@@ -1336,9 +1406,9 @@ function SearchPanel({ show, query, setQuery, results, viewProduct, close }) {
   return <aside id="search-panel" className={`panel ${show ? 'show' : ''}`} aria-label="Search products"><div className="panel-head"><div className="panel-title">Search Myeonn</div><button className="icon-btn" onClick={close} aria-label="Close search"><i className="ti ti-x" /></button></div><div className="panel-body"><div className="search-box"><input type="search" value={query} onChange={e => setQuery(e.target.value)} placeholder="Search tees, hoodies, shirts..." /><button className="btn-dark">Search</button></div><div className="search-results">{results.length ? results.map(product => <div className="result-row" key={product.id}><div><div className="result-name">{product.name}</div><div className="result-meta">{product.collection} · {productMeta(product)} · {price(product.price)}</div></div><button className="btn-outline-dark" onClick={() => viewProduct(product)}>View</button></div>) : <div className="cart-empty">No products found. Try tee, shirt, hoodie, or kids.</div>}</div></div></aside>;
 }
 
-function CartPanel({ show, cart, checkout, removeItem, close }) {
-  const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
-  return <aside id="cart-panel" className={`panel ${show ? 'show' : ''}`} aria-label="Shopping cart"><div className="panel-head"><div className="panel-title">Your cart</div><button className="icon-btn" onClick={close} aria-label="Close cart"><i className="ti ti-x" /></button></div><div className="panel-body">{cart.length ? cart.map(item => <div className="cart-row" key={`${item.id}-${item.size || 'size'}`}><div><div className="cart-name">{item.name}</div><div className="cart-meta">{item.meta} · Size {item.size || 'Not selected'} · Qty {item.qty}</div><button className="cart-remove" onClick={() => removeItem(item)}>Remove</button></div><div className="cart-name">{price(item.price * item.qty)}</div></div>) : <div className="cart-empty">Your cart is empty. Add a few Myeonn favourites and they will appear here.</div>}</div><div className="cart-foot"><div className="cart-total"><span>Total</span><span>{price(total)}</span></div><button className="btn-gold" style={{ width: '100%' }} onClick={checkout}>Checkout</button></div></aside>;
+function CartPanel({ show, cart, checkout, removeItem, updateQuantity, close }) {
+  const { subtotal, shipping, total } = calculateOrderTotals(cart);
+  return <aside id="cart-panel" className={`panel ${show ? 'show' : ''}`} aria-label="Shopping cart"><div className="panel-head"><div className="panel-title">Your cart</div><button className="icon-btn" onClick={close} aria-label="Close cart"><i className="ti ti-x" /></button></div><div className="panel-body">{cart.length ? cart.map(item => <div className="cart-row" key={`${item.id}-${item.size || 'size'}`}><div><div className="cart-name">{item.name}</div><div className="cart-meta">{item.meta} · Size {item.size || 'Not selected'}</div><div className="cart-item-actions"><div className="quantity-control" aria-label={`Quantity for ${item.name}`}><button onClick={() => updateQuantity(item, item.qty - 1)} aria-label={`Decrease ${item.name}`}><i className="ti ti-minus" /></button><span>{item.qty}</span><button onClick={() => updateQuantity(item, item.qty + 1)} aria-label={`Increase ${item.name}`}><i className="ti ti-plus" /></button></div><button className="cart-remove" onClick={() => removeItem(item)}>Remove</button></div></div><div className="cart-name">{price(item.price * item.qty)}</div></div>) : <div className="cart-empty">Your cart is empty. Add a few Myeonn favourites and they will appear here.</div>}</div><div className="cart-foot"><div className="cart-subtotal"><span>Subtotal</span><span>{price(subtotal)}</span></div><div className="cart-subtotal"><span>Delivery</span><span>{shipping ? price(shipping) : 'Free'}</span></div><div className="cart-total"><span>Total</span><span>{price(total)}</span></div><button className="btn-gold" style={{ width: '100%' }} onClick={checkout} disabled={!cart.length}>Checkout</button></div></aside>;
 }
 
 function InfoModal({ info, close }) {

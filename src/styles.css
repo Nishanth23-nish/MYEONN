@@ -318,12 +318,23 @@ nav{background:#0A0A0A;padding:0 48px;display:flex;align-items:center;justify-co
 .payment-pill.paid{background:#EAF5EA;color:#2F6F3C;border-color:#B9D8BE;}
 .payment-pill.pending{background:#FFF6E8;color:#9A7432;border-color:#D4AF82;}
 button:disabled{opacity:.55;cursor:not-allowed;}
+.store-error{min-height:100vh;display:grid;place-items:center;background:#F9F6F1;padding:24px;}
+.store-error>div{width:min(520px,100%);background:#fff;border:0.5px solid #DDD8CF;border-radius:8px;padding:36px;box-shadow:0 14px 34px rgba(26,23,20,.08);}
+.store-error h1{font-family:Georgia,serif;font-size:34px;font-weight:400;color:#1A1714;margin:12px 0;}
+.store-error p{color:#5A5248;line-height:1.7;margin:0 0 22px;}
+.store-error small{display:block;margin-top:20px;color:#9B3A2E;font-size:11px;overflow-wrap:anywhere;}
 .form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
 .form-field{display:flex;flex-direction:column;gap:6px;margin-bottom:14px;}
 .form-field label{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#7A7068;}
 .form-field input,.form-field textarea,.form-field select{background:#F9F6F1;border:0.5px solid #DDD8CF;border-radius:4px;padding:11px 14px;font-size:14px;color:#1A1714;font-family:inherit;outline:none;transition:border-color .2s;}
 .form-field input:focus,.form-field textarea:focus,.form-field select:focus{border-color:#D4AF82;}
 .form-field textarea{height:120px;resize:none;}
+.coupon-box{margin:20px 0;padding:14px;border:0.5px solid #DDD8CF;border-radius:6px;background:#F9F6F1;}
+.coupon-box label{display:block;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#7A7068;margin-bottom:8px;}
+.coupon-box>div{display:flex;gap:8px;}
+.coupon-box input{min-width:0;flex:1;border:0.5px solid #DDD8CF;border-radius:4px;padding:10px 12px;background:#fff;color:#1A1714;font:inherit;text-transform:uppercase;}
+.coupon-box .btn-outline-dark{padding:9px 13px;white-space:nowrap;}
+.coupon-box small{display:block;margin-top:8px;color:#7A7068;font-size:11px;line-height:1.4;}
 .password-wrap{position:relative;}
 .password-wrap input{width:100%;padding-right:44px;}
 .password-toggle{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:34px;height:34px;border:0;background:transparent;color:#7A7068;display:flex;align-items:center;justify-content:center;border-radius:4px;}
@@ -374,8 +385,15 @@ footer{background:#060606;padding:48px 48px 28px;}
 .result-meta,.cart-meta{font-size:12px;color:#7A7068;margin-top:3px;}
 .cart-remove{margin-top:10px;background:transparent;border:0;color:#9B3A2E;font-size:11px;letter-spacing:1px;text-transform:uppercase;padding:0;}
 .cart-remove:hover{color:#6F231B;text-decoration:underline;}
+.cart-item-actions{display:flex;align-items:center;gap:14px;margin-top:10px;}
+.quantity-control{display:inline-grid;grid-template-columns:30px 32px 30px;align-items:center;border:0.5px solid #DDD8CF;border-radius:4px;overflow:hidden;background:#F9F6F1;}
+.quantity-control button{height:30px;border:0;background:#fff;color:#1A1714;display:flex;align-items:center;justify-content:center;}
+.quantity-control button:hover{background:#F2EDE5;color:#9A7432;}
+.quantity-control button i{font-size:15px;}
+.quantity-control span{text-align:center;font-size:12px;font-weight:700;color:#1A1714;}
 .cart-empty{font-size:14px;color:#7A7068;line-height:1.7;background:#fff;border:0.5px solid #DDD8CF;border-radius:6px;padding:18px;}
 .cart-foot{border-top:0.5px solid #DDD8CF;padding:18px 24px;background:#fff;}
+.cart-subtotal{display:flex;justify-content:space-between;font-size:12px;color:#7A7068;margin-bottom:8px;}
 .cart-total{display:flex;justify-content:space-between;font-size:15px;font-weight:700;margin-bottom:14px;}
 .modal{position:fixed;left:50%;top:50%;width:min(560px,calc(100% - 32px));max-height:calc(100vh - 48px);overflow:auto;transform:translate(-50%,-45%) scale(.98);background:#fff;border-radius:8px;z-index:520;opacity:0;visibility:hidden;pointer-events:none;transition:opacity .2s,transform .2s,visibility .2s;box-shadow:0 20px 60px rgba(0,0,0,.28);}
 .modal.show{opacity:1;visibility:visible;pointer-events:auto;transform:translate(-50%,-50%) scale(1);}
