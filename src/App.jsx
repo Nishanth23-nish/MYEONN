@@ -1,9 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { createUserWithEmailAndPassword, onAuthStateChanged, signInWithEmailAndPassword, signOut, updateProfile } from 'firebase/auth';
-import { addDoc, collection, doc, getDocs, orderBy, query, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore';
 import storeProducts from '../data/products.json';
-import { auth, db } from './firebaseClient';
-import { supabaseClearSession, supabaseCurrentUser, supabaseListOrders, supabaseListProducts, supabaseLogin, supabaseLogout, supabaseRegister, supabaseSaveOrder, supabaseSaveProduct, supabaseSessionInfo, supabaseUpdateOrderStatus } from './supabaseClient';
 
 const infoContent = {
   sale: ['Sale', 'Seasonal offers are available across selected kids and men styles. Extra bundle offers are available on kids sets.'],
@@ -17,9 +13,7 @@ const infoContent = {
 };
 
 const fallbackProducts = normalizeProducts(storeProducts);
-const adminEmails = ['admin@myeonn.com', 'myeonnadmin@gmail.com'];
-const useFirebaseBackend = typeof window !== 'undefined' && !['localhost', '127.0.0.1'].includes(window.location.hostname);
-const useSupabaseBackend = useFirebaseBackend;
+const apiBase = String(import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
 
 const price = value => '₹' + Number(value || 0).toLocaleString('en-IN');
 const productMeta = product => [product.category, product.age || product.size].filter(Boolean).join(' · ');
@@ -183,9 +177,8 @@ function saveReturnRequests(user, requests) {
 }
 
 async function api(path, options = {}) {
-  if (useSupabaseBackend) return supabaseApi(path, options);
-  if (useFirebaseBackend) return firebaseApi(path, options);
-  const response = await fetch(path, {
+  const response = await fetch(`${apiBase}${path}`, {
+    credentials: 'include',
     headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
     ...options
   });
@@ -194,256 +187,10 @@ async function api(path, options = {}) {
   try {
     data = text ? JSON.parse(text) : {};
   } catch {
-    throw new Error('Online backend is not connected for this action yet.');
+    throw new Error('The store backend is not connected yet.');
   }
   if (!response.ok) throw new Error(data.error || 'Something went wrong.');
   return data;
-}
-
-async function supabaseApi(path, options = {}) {
-  const method = String(options.method || 'GET').toUpperCase();
-  const body = options.body ? JSON.parse(options.body) : {};
-
-  if (path === '/api/products' && method === 'GET') {
-    const products = await supabaseListProducts();
-    return products;
-  }
-
-  if (path === '/api/orders' && method === 'GET') {
-    const current = supabaseCurrentUser();
-    if (!current || adminEmails.includes(current.email)) return [];
-    const orders = await supabaseListOrders();
-    return ordersForUser(orders, current);
-  }
-
-  if (path === '/api/session' && method === 'GET') {
-    const current = supabaseCurrentUser();
-    if (!current || adminEmails.includes(current.email)) return { user: null };
-    return { user: current };
-  }
-
-  if (path === '/api/admin/session' && method === 'GET') {
-    const current = supabaseCurrentUser();
-    return { admin: current && adminEmails.includes(current.email) ? { ...current, name: 'Myeonn Admin', role: 'admin' } : null };
-  }
-
-  if (path === '/api/register' && method === 'POST') {
-    supabaseClearSession();
-    const user = await supabaseRegister(body);
-    return { user };
-  }
-
-  if (path === '/api/login' && method === 'POST') {
-    supabaseClearSession();
-    const user = await supabaseLogin(body);
-    if (adminEmails.includes(user.email)) throw new Error('Use Admin login for this account.');
-    return { user };
-  }
-
-  if (path === '/api/logout' && method === 'POST') {
-    await supabaseLogout();
-    return { ok: true };
-  }
-
-  if (path === '/api/admin/login' && method === 'POST') {
-    supabaseClearSession();
-    const user = await supabaseLogin(body);
-    if (!adminEmails.includes(user.email)) {
-      await supabaseLogout();
-      throw new Error('This email is not an admin account.');
-    }
-    const session = supabaseSessionInfo();
-    if (!session.hasToken) throw new Error('Supabase login did not save a session. Please try again.');
-    if (session.uid !== 'a1592343-bf1f-43dc-a62c-88f1dea87465') throw new Error(`Wrong Supabase admin session: ${session.email || 'no email'}`);
-    return { admin: { ...user, name: 'Myeonn Admin', role: 'admin' } };
-  }
-
-  if (path === '/api/admin/logout' && method === 'POST') {
-    await supabaseLogout();
-    return { ok: true };
-  }
-
-  if (path === '/api/admin/orders' && method === 'GET') return supabaseListOrders();
-
-  const statusMatch = path.match(/^\/api\/admin\/orders\/([^/]+)\/status$/);
-  if (statusMatch && method === 'PATCH') return supabaseUpdateOrderStatus(decodeURIComponent(statusMatch[1]), body.status);
-
-  const stockMatch = path.match(/^\/api\/admin\/products\/([^/]+)\/stock$/);
-  if (stockMatch && method === 'PATCH') {
-    const productId = decodeURIComponent(stockMatch[1]);
-    const product = fallbackProducts.find(item => item.id === productId) || {};
-    return supabaseSaveProduct({ ...product, id: productId, stock: Number(body.stock || 0) });
-  }
-
-  if (path === '/api/admin/products' && method === 'POST') {
-    const session = supabaseSessionInfo();
-    if (!session.hasToken) throw new Error('Please sign out and login again as Supabase admin.');
-    if (session.uid !== 'a1592343-bf1f-43dc-a62c-88f1dea87465') throw new Error(`Wrong Supabase admin session: ${session.email || 'no email'}`);
-    const product = productFromForm(body);
-    if (!product.name || !product.category || !Number.isFinite(product.price) || product.price <= 0) {
-      throw new Error('Please enter product name, category, and a valid price.');
-    }
-    if (!Number.isInteger(product.stock) || product.stock < 0) throw new Error('Stock must be a whole number.');
-    return supabaseSaveProduct(product);
-  }
-
-  if (path === '/api/orders' && method === 'POST') {
-    const items = (body.items || []).map(item => ({ ...item, lineTotal: Number(item.price || 0) * Number(item.qty || 0) }));
-    const totals = calculateOrderTotals(items, body.customer?.couponCode);
-    const order = {
-      id: `MYN-${crypto.randomUUID().slice(0, 8).toUpperCase()}`,
-      created_at: new Date().toISOString(),
-      status: 'received',
-      customer: body.customer || {},
-      items,
-      subtotal: totals.subtotal,
-      shipping: totals.shipping,
-      total: totals.total
-    };
-    order.customer = { ...order.customer, couponCode: totals.coupon, discount: totals.discount };
-    return supabaseSaveOrder(order);
-  }
-
-  throw new Error('This Supabase action is not available yet.');
-}
-
-async function firebaseApi(path, options = {}) {
-  const method = String(options.method || 'GET').toUpperCase();
-  const body = options.body ? JSON.parse(options.body) : {};
-
-  if (path === '/api/products' && method === 'GET') {
-    const snapshot = await getDocs(collection(db, 'products'));
-    const items = snapshot.docs.map(item => ({ id: item.id, ...item.data() }));
-    return items.length ? items : fallbackProducts;
-  }
-
-  if (path === '/api/orders' && method === 'GET') {
-    const current = auth.currentUser;
-    if (!current || adminEmails.includes(current.email)) return [];
-    const snapshot = await getDocs(query(collection(db, 'orders'), orderBy('createdAt', 'desc')));
-    return ordersForUser(snapshot.docs.map(orderFromDoc), firebaseUser(current));
-  }
-
-  if (path === '/api/session' && method === 'GET') {
-    const current = auth.currentUser;
-    if (!current || adminEmails.includes(current.email)) return { user: null };
-    return { user: firebaseUser(current) };
-  }
-
-  if (path === '/api/admin/session' && method === 'GET') {
-    const current = auth.currentUser;
-    return { admin: current && adminEmails.includes(current.email) ? firebaseAdmin(current) : null };
-  }
-
-  if (path === '/api/register' && method === 'POST') {
-    if (!body.name || !body.email || !body.password) throw new Error('Please fill all register details.');
-    const credential = await createUserWithEmailAndPassword(auth, body.email, body.password);
-    await updateProfile(credential.user, { displayName: body.name });
-    const user = firebaseUser({ ...credential.user, displayName: body.name });
-    await setDoc(doc(db, 'users', credential.user.uid), { ...user, createdAt: serverTimestamp() });
-    return { user };
-  }
-
-  if (path === '/api/login' && method === 'POST') {
-    const credential = await signInWithEmailAndPassword(auth, body.email, body.password);
-    if (adminEmails.includes(credential.user.email)) throw new Error('Use Admin login for this account.');
-    return { user: firebaseUser(credential.user) };
-  }
-
-  if (path === '/api/logout' && method === 'POST') {
-    await signOut(auth);
-    return { ok: true };
-  }
-
-  if (path === '/api/admin/login' && method === 'POST') {
-    const credential = await signInWithEmailAndPassword(auth, body.email, body.password);
-    if (!adminEmails.includes(credential.user.email)) {
-      await signOut(auth);
-      throw new Error('This email is not an admin account.');
-    }
-    return { admin: firebaseAdmin(credential.user) };
-  }
-
-  if (path === '/api/admin/logout' && method === 'POST') {
-    await signOut(auth);
-    return { ok: true };
-  }
-
-  if (path === '/api/admin/orders' && method === 'GET') {
-    const snapshot = await getDocs(query(collection(db, 'orders'), orderBy('createdAt', 'desc')));
-    return snapshot.docs.map(orderFromDoc);
-  }
-
-  const statusMatch = path.match(/^\/api\/admin\/orders\/([^/]+)\/status$/);
-  if (statusMatch && method === 'PATCH') {
-    const orderId = decodeURIComponent(statusMatch[1]);
-    await updateDoc(doc(db, 'orders', orderId), { status: body.status, updatedAt: serverTimestamp() });
-    const snapshot = await getDocs(query(collection(db, 'orders'), orderBy('createdAt', 'desc')));
-    return snapshot.docs.map(orderFromDoc).find(order => order.id === orderId);
-  }
-
-  const stockMatch = path.match(/^\/api\/admin\/products\/([^/]+)\/stock$/);
-  if (stockMatch && method === 'PATCH') {
-    const productId = decodeURIComponent(stockMatch[1]);
-    const product = fallbackProducts.find(item => item.id === productId) || {};
-    const updated = { ...product, id: productId, stock: Number(body.stock || 0), updatedAt: new Date().toISOString() };
-    await setDoc(doc(db, 'products', productId), updated, { merge: true });
-    return updated;
-  }
-
-  if (path === '/api/admin/products' && method === 'POST') {
-    const product = productFromForm(body);
-    if (!product.name || !product.category || !Number.isFinite(product.price) || product.price <= 0) {
-      throw new Error('Please enter product name, category, and a valid price.');
-    }
-    if (!Number.isInteger(product.stock) || product.stock < 0) throw new Error('Stock must be a whole number.');
-    await setDoc(doc(db, 'products', product.id), product, { merge: true });
-    return product;
-  }
-
-  if (path === '/api/orders' && method === 'POST') {
-    const items = (body.items || []).map(item => ({ ...item, lineTotal: Number(item.price || 0) * Number(item.qty || 0) }));
-    const totals = calculateOrderTotals(items, body.customer?.couponCode);
-    const order = {
-      id: `MYN-${crypto.randomUUID().slice(0, 8).toUpperCase()}`,
-      createdAt: new Date().toISOString(),
-      status: 'received',
-      customer: body.customer || {},
-      items,
-      subtotal: totals.subtotal,
-      shipping: totals.shipping,
-      total: totals.total
-    };
-    order.customer = { ...order.customer, couponCode: totals.coupon, discount: totals.discount };
-    await setDoc(doc(db, 'orders', order.id), { ...order, createdAt: serverTimestamp() });
-    return order;
-  }
-
-  if (path === '/api/contact' && method === 'POST') {
-    await addDoc(collection(db, 'contacts'), { ...body, createdAt: serverTimestamp() });
-    return { ok: true };
-  }
-
-  if (path === '/api/newsletter' && method === 'POST') {
-    await addDoc(collection(db, 'newsletter'), { ...body, createdAt: serverTimestamp() });
-    return { ok: true };
-  }
-
-  throw new Error('This online backend action is not available yet.');
-}
-
-function firebaseUser(user) {
-  return { id: user.uid, name: user.displayName || user.email?.split('@')[0] || 'Customer', email: user.email };
-}
-
-function firebaseAdmin(user) {
-  return { id: user.uid, name: user.displayName || 'Myeonn Admin', email: user.email, role: 'admin' };
-}
-
-function orderFromDoc(snapshot) {
-  const data = snapshot.data();
-  const createdAt = data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : data.createdAt;
-  return { ...data, id: data.id || snapshot.id, createdAt };
 }
 
 class StoreErrorBoundary extends React.Component {
@@ -468,7 +215,7 @@ export default function App() {
 
 function StorefrontApp() {
   const [page, setPage] = useState(pageFromLocation);
-  const [products, setProducts] = useState(useSupabaseBackend ? [] : fallbackProducts);
+  const [products, setProducts] = useState(fallbackProducts);
   const [cart, setCart] = useState(readCart);
   const [toast, setToast] = useState('');
   const [panel, setPanel] = useState(null);
@@ -482,7 +229,7 @@ function StorefrontApp() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
-    api('/api/products').then(items => setProducts(normalizeProducts(items))).catch(() => setProducts(useSupabaseBackend ? [] : fallbackProducts));
+    api('/api/products').then(items => setProducts(normalizeProducts(items))).catch(() => setProducts(fallbackProducts));
     api('/api/session').then(session => setUser(session.user)).catch(() => setUser(null));
     api('/api/admin/session').then(session => setAdmin(session.admin)).catch(() => setAdmin(null));
   }, []);
@@ -511,34 +258,7 @@ function StorefrontApp() {
   }, []);
 
   useEffect(() => {
-    if (useSupabaseBackend || !useFirebaseBackend) return undefined;
-    return onAuthStateChanged(auth, current => {
-      if (!current) {
-        setUser(null);
-        setAdmin(null);
-        return;
-      }
-      if (adminEmails.includes(current.email)) {
-        setAdmin(firebaseAdmin(current));
-        setUser(null);
-      } else {
-        setUser(firebaseUser(current));
-        setAdmin(null);
-      }
-    });
-  }, []);
-
-  useEffect(() => {
     if (admin) setUser(null);
-  }, [admin]);
-
-  useEffect(() => {
-    if (!useSupabaseBackend || !admin) return;
-    const session = supabaseSessionInfo();
-    if (!session.hasToken) {
-      setAdmin(null);
-      setToast('Please login again as Supabase admin.');
-    }
   }, [admin]);
 
   useEffect(() => {
@@ -822,7 +542,6 @@ function AdminPage({ admin, products, setProducts, setAdmin, setUser, showPage, 
   const [activeSection, setActiveSection] = useState('inventory');
   const [editingProduct, setEditingProduct] = useState(null);
   const stockRows = useMemo(() => calculateStockRows(products, orders), [products, orders]);
-  const supabaseSession = useMemo(() => useSupabaseBackend ? supabaseSessionInfo() : null, [admin]);
   const stockSummary = useMemo(() => ({
     totalProducts: stockRows.length,
     available: stockRows.reduce((sum, item) => sum + item.available, 0),
@@ -858,9 +577,7 @@ function AdminPage({ admin, products, setProducts, setAdmin, setUser, showPage, 
   const submitLogin = async () => {
     try {
       const result = await api('/api/admin/login', { method: 'POST', body: JSON.stringify(login) });
-      if (!useSupabaseBackend) {
-        try { await api('/api/logout', { method: 'POST', body: '{}' }); } catch {}
-      }
+      try { await api('/api/logout', { method: 'POST', body: '{}' }); } catch {}
       setUser(null);
       setAdmin(result.admin);
       setToast(`Admin signed in as ${result.admin.name}.`);
@@ -940,7 +657,7 @@ function AdminPage({ admin, products, setProducts, setAdmin, setUser, showPage, 
     return <main className="page active"><section className="contact-hero"><div className="sec-label" style={{ color: '#D4AF82', textAlign: 'center' }}>Admin</div><h1 className="hero-h1" style={{ color: '#F5F0E8', textAlign: 'center', fontSize: 44 }}>Admin login</h1><p style={{ color: '#A89F93', textAlign: 'center', marginTop: 12, fontSize: 14 }}>Sign in here to confirm orders and mark packs as shipped</p></section><section className="sec"><div className="admin-login-card"><div className="sec-label">Order desk</div><div className="sec-title" style={{ marginBottom: 24 }}>Manager access</div><Field label="Admin email" type="email" value={login.email} onChange={email => setLogin({ ...login, email })} placeholder="admin@myeonn.com" /><PasswordField value={login.password} onChange={password => setLogin({ ...login, password })} showing={showPassword} toggle={() => setShowPassword(!showPassword)} placeholder="Admin password" /><div className="account-actions"><button className="btn-gold" onClick={submitLogin}>Login as admin</button><button className="btn-outline-dark" onClick={() => showPage('login')}>Login as user</button></div></div></section></main>;
   }
 
-  return <main className="page active admin-page"><AdminSidebar active={activeSection} setActive={setActiveSection} /><section className="admin-content"><div className="admin-toolbar"><div><div className="sec-label">Seller dashboard</div><div className="admin-name">{admin.name}</div><div className="admin-email">{admin.email}</div>{supabaseSession && <div className="admin-email">Supabase UID: {supabaseSession.uid || 'not logged in'}</div>}</div><div className="account-actions"><button className="btn-outline-dark" onClick={loadOrders}>{loading ? 'Refreshing...' : 'Refresh dashboard'}</button><button className="btn-dark" onClick={logout}>Sign out</button></div></div>{activeSection === 'home' && <AdminHome summary={stockSummary} orders={orders} />}{activeSection === 'listings' && <ListingsPanel rows={stockRows} />}{activeSection === 'add-product' && <AddProductPanel key={editingProduct?.id || 'new-product'} addProduct={addProduct} product={editingProduct} cancelEdit={() => setEditingProduct(null)} />}{activeSection === 'inventory' && <StockDashboard rows={stockRows} summary={stockSummary} editStock={editStock} editProduct={editProduct} />}{activeSection === 'orders' && <OrdersPanel orders={orders} setStatus={setStatus} />}{activeSection === 'payments' && <PaymentsPanel orders={orders} />}{['growth', 'ads', 'reports', 'partner'].includes(activeSection) && <AdminPlaceholder section={activeSection} />}</section></main>;
+  return <main className="page active admin-page"><AdminSidebar active={activeSection} setActive={setActiveSection} /><section className="admin-content"><div className="admin-toolbar"><div><div className="sec-label">Seller dashboard</div><div className="admin-name">{admin.name}</div><div className="admin-email">{admin.email}</div></div><div className="account-actions"><button className="btn-outline-dark" onClick={loadOrders}>{loading ? 'Refreshing...' : 'Refresh dashboard'}</button><button className="btn-dark" onClick={logout}>Sign out</button></div></div>{activeSection === 'home' && <AdminHome summary={stockSummary} orders={orders} />}{activeSection === 'listings' && <ListingsPanel rows={stockRows} />}{activeSection === 'add-product' && <AddProductPanel key={editingProduct?.id || 'new-product'} addProduct={addProduct} product={editingProduct} cancelEdit={() => setEditingProduct(null)} />}{activeSection === 'inventory' && <StockDashboard rows={stockRows} summary={stockSummary} editStock={editStock} editProduct={editProduct} />}{activeSection === 'orders' && <OrdersPanel orders={orders} setStatus={setStatus} />}{activeSection === 'payments' && <PaymentsPanel orders={orders} />}{['growth', 'ads', 'reports', 'partner'].includes(activeSection) && <AdminPlaceholder section={activeSection} />}</section></main>;
 }
 
 function AdminSidebar({ active, setActive }) {
@@ -1006,7 +723,7 @@ function AddProductPanel({ addProduct, product, cancelEdit }) {
     setExistingImages(current => current.filter((_, itemIndex) => itemIndex !== index));
   };
   const save = () => addProduct({ ...form, images: existingImages, imageFiles });
-  return <div><div className="admin-section-title"><div><div className="sec-label">Supabase products</div><div className="sec-title">{product ? 'Edit product' : 'Add new product'}</div></div>{product && <button className="btn-outline-dark" onClick={cancelEdit}>New product</button>}</div><div className="admin-form-card"><div className="form-row"><Field label="Product name" value={form.name} onChange={value => update('name', value)} placeholder="Falcan hoodie" /><Field label="Price" type="number" value={form.price} onChange={value => update('price', value)} placeholder="525" /></div><div className="form-row"><div className="form-field"><label>Collection</label><select value={form.collection} onChange={event => update('collection', event.target.value)}><option value="kids">Kids</option><option value="men">Men</option></select></div><div className="form-field"><label>Category</label><select value={form.category} onChange={event => update('category', event.target.value)}>{categoryOptions[form.collection].map(option => <option key={option} value={option}>{option}</option>)}</select></div></div><div className="form-row"><div className="form-field"><label>Age / Size label</label><select value={form.collection === 'kids' ? form.age : form.size} onChange={event => update(form.collection === 'kids' ? 'age' : 'size', event.target.value)}>{ageSizeOptions[form.collection].map(option => <option key={option} value={option}>{option}</option>)}</select></div><Field label="Stock" type="number" value={form.stock} onChange={value => update('stock', value)} placeholder="50" /></div><div className="form-field"><label>Product images</label><input type="file" accept="image/*" multiple onChange={chooseImages} /><small className="field-hint">Free mode: choose one image, then click Choose Files again to add another. Existing images will stay. Maximum 5 images.</small></div>{(existingImages.length > 0 || imageFiles.length > 0) && <div className="image-preview-row">{existingImages.map((url, index) => <div className="image-preview" key={`${url}-${index}`}><img src={url} alt={`Existing product ${index + 1}`} /><span>{index + 1}</span><button type="button" className="image-remove" onClick={() => removeExistingImage(index)} aria-label="Remove image"><i className="ti ti-x" /></button></div>)}{imageFiles.map((file, index) => { const url = URL.createObjectURL(file); return <div className="image-preview" key={`${file.name}-${file.lastModified}-${index}`}><img src={url} alt={`Product preview ${existingImages.length + index + 1}`} onLoad={() => URL.revokeObjectURL(url)} /><span>{existingImages.length + index + 1}</span><button type="button" className="image-remove" onClick={() => removeImage(index)} aria-label="Remove image"><i className="ti ti-x" /></button></div>; })}</div>}<Field label="Tags" value={form.tags} onChange={value => update('tags', value)} placeholder="hoodie, black, kids" /><button className="btn-gold" onClick={save}>{product ? 'Save product changes' : 'Save product to Supabase'}</button></div></div>;
+  return <div><div className="admin-section-title"><div><div className="sec-label">Product catalogue</div><div className="sec-title">{product ? 'Edit product' : 'Add new product'}</div></div>{product && <button className="btn-outline-dark" onClick={cancelEdit}>New product</button>}</div><div className="admin-form-card"><div className="form-row"><Field label="Product name" value={form.name} onChange={value => update('name', value)} placeholder="Falcan hoodie" /><Field label="Price" type="number" value={form.price} onChange={value => update('price', value)} placeholder="525" /></div><div className="form-row"><div className="form-field"><label>Collection</label><select value={form.collection} onChange={event => update('collection', event.target.value)}><option value="kids">Kids</option><option value="men">Men</option></select></div><div className="form-field"><label>Category</label><select value={form.category} onChange={event => update('category', event.target.value)}>{categoryOptions[form.collection].map(option => <option key={option} value={option}>{option}</option>)}</select></div></div><div className="form-row"><div className="form-field"><label>Age / Size label</label><select value={form.collection === 'kids' ? form.age : form.size} onChange={event => update(form.collection === 'kids' ? 'age' : 'size', event.target.value)}>{ageSizeOptions[form.collection].map(option => <option key={option} value={option}>{option}</option>)}</select></div><Field label="Stock" type="number" value={form.stock} onChange={value => update('stock', value)} placeholder="50" /></div><div className="form-field"><label>Product images</label><input type="file" accept="image/*" multiple onChange={chooseImages} /><small className="field-hint">Free mode: choose one image, then click Choose Files again to add another. Existing images will stay. Maximum 5 images.</small></div>{(existingImages.length > 0 || imageFiles.length > 0) && <div className="image-preview-row">{existingImages.map((url, index) => <div className="image-preview" key={`${url}-${index}`}><img src={url} alt={`Existing product ${index + 1}`} /><span>{index + 1}</span><button type="button" className="image-remove" onClick={() => removeExistingImage(index)} aria-label="Remove image"><i className="ti ti-x" /></button></div>)}{imageFiles.map((file, index) => { const url = URL.createObjectURL(file); return <div className="image-preview" key={`${file.name}-${file.lastModified}-${index}`}><img src={url} alt={`Product preview ${existingImages.length + index + 1}`} onLoad={() => URL.revokeObjectURL(url)} /><span>{existingImages.length + index + 1}</span><button type="button" className="image-remove" onClick={() => removeImage(index)} aria-label="Remove image"><i className="ti ti-x" /></button></div>; })}</div>}<Field label="Tags" value={form.tags} onChange={value => update('tags', value)} placeholder="hoodie, black, kids" /><button className="btn-gold" onClick={save}>{product ? 'Save product changes' : 'Save product'}</button></div></div>;
 }
 
 function AdminHome({ summary, orders }) {
@@ -1273,9 +990,7 @@ function LoginPage({ user, setUser, setAdmin, showPage, setToast }) {
   const submitLogin = async () => {
     try {
       const result = await api('/api/login', { method: 'POST', body: JSON.stringify(login) });
-      if (!useSupabaseBackend) {
-        try { await api('/api/admin/logout', { method: 'POST', body: '{}' }); } catch {}
-      }
+      try { await api('/api/admin/logout', { method: 'POST', body: '{}' }); } catch {}
       setAdmin(null);
       setUser(result.user);
       setToast(`Welcome back, ${result.user.name}.`);
@@ -1285,9 +1000,7 @@ function LoginPage({ user, setUser, setAdmin, showPage, setToast }) {
   const submitRegister = async () => {
     try {
       const result = await api('/api/register', { method: 'POST', body: JSON.stringify(register) });
-      if (!useSupabaseBackend) {
-        try { await api('/api/admin/logout', { method: 'POST', body: '{}' }); } catch {}
-      }
+      try { await api('/api/admin/logout', { method: 'POST', body: '{}' }); } catch {}
       setAdmin(null);
       setUser(result.user);
       setToast(`Account created. Welcome, ${result.user.name}.`);

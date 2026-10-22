@@ -1,6 +1,6 @@
 # Myeonn Website
 
-This folder contains the Myeonn storefront with a React frontend and a lightweight local Node backend.
+This folder contains the Myeonn React storefront and Node backend. The backend can use MySQL for products, orders, customers, stock, messages, and sessions.
 
 ## Run
 
@@ -16,14 +16,32 @@ Open:
 http://127.0.0.1:5177
 ```
 
+For local development without MySQL, the server uses the JSON files in `data/`. For a real deployed store, add a `MYSQL_URL` value as shown in `.env.example` before starting the backend.
+
+## MySQL Setup
+
+1. Create a MySQL database with your hosting provider.
+2. Run the SQL in `mysql-schema.sql` once, or let the server create the table automatically on its first connection.
+3. Create a `.env` file based on `.env.example` and add the connection URL supplied by your MySQL provider.
+4. Start the Node backend with `npm start`.
+5. When the backend is deployed on a public URL, build the storefront with `VITE_API_URL` set to that URL.
+
+Example Windows PowerShell build for a deployed API:
+
+```powershell
+$env:VITE_API_URL = "https://your-myeonn-api.example.com"
+npm run build
+```
+
+`MYSQL_URL` is a server secret. Never add it to the React app, GitHub, or Firebase Hosting settings. The browser only talks to the Node API, and the Node API talks to MySQL.
+
 ## What The Backend Does
 
 - Serves the built React app from `dist/`.
 - Serves `myeonn-website.html` and the `images/` folder.
 - Provides product catalogue search at `GET /api/products`.
-- Saves checkout orders to `data/orders.json`.
-- Saves contact form messages to `data/messages.json`.
-- Saves new-arrival email signups to `data/subscribers.json`.
+- Saves checkout orders, stock changes, and catalogue edits to MySQL.
+- Saves contact form messages and new-arrival email signups to MySQL.
 - Handles account registration, login, logout, and sessions.
 - Handles a separate admin login for confirming orders and marking packs as shipped.
 - Provides a health check at `GET /api/health`.
@@ -39,9 +57,9 @@ Email: admin@myeonn.com
 Password: admin123
 ```
 
-The admin dashboard shows stock details and every checkout order from `data/orders.json`. Product stock defaults to 50 units, and edited stock is saved in `data/products.json`. Stock is shown as opening stock minus ordered quantities. New orders start as `received`, then the admin can mark them as `confirmed`, then `shipped`.
+The admin dashboard shows stock details and every checkout order. Product stock defaults to 50 units, and edited stock is stored by the backend. Stock is shown as opening stock minus ordered quantities. New orders start as `received`, then the admin can mark them as `confirmed`, then `shipped`.
 
-## Data Files
+## Local Data Files
 
 - `data/products.json`: edit this to add, remove, or change products.
 - `data/orders.json`: new checkout orders appear here.
@@ -52,7 +70,11 @@ The admin dashboard shows stock details and every checkout order from `data/orde
 - `data/admins.json`: admin accounts with hashed passwords.
 - `data/admin-sessions.json`: active admin login sessions.
 
-This backend is ready for local use. For real online selling, the next step is connecting a payment provider, email delivery, and a hosted database.
+These are used only when `MYSQL_URL` is not set. On its first MySQL connection, the backend imports the existing contents as starter data.
+
+## Hosting
+
+Firebase Hosting may continue to host the static React build in `dist/`. It does not host the Node API or MySQL database. Host the Node API separately, set `CORS_ORIGIN` to your storefront URL, set `COOKIE_SECURE=true`, then build the frontend with the API URL as `VITE_API_URL`.
 
 ## Frontend
 

@@ -2,11 +2,12 @@ const http = require('http');
 const fs = require('fs/promises');
 const path = require('path');
 const crypto = require('crypto');
+const { ensureSchema, readJson, useMySql, writeJson } = require('./database');
 
 const ROOT = __dirname;
-const DATA_DIR = path.join(ROOT, 'data');
 const PORT = Number(process.env.PORT || 5177);
 const DEFAULT_STOCK = 50;
+const CORS_ORIGIN = process.env.CORS_ORIGIN || '';
 
 const contentTypes = {
   '.html': 'text/html; charset=utf-8',
@@ -26,9 +27,19 @@ function send(res, status, body, type = 'application/json; charset=utf-8') {
   res.writeHead(status, {
     'Content-Type': type,
     'Cache-Control': 'no-store',
+    ...corsHeaders(),
     ...extraHeaders
   });
   res.end(payload);
+}
+
+function corsHeaders() {
+  if (!CORS_ORIGIN) return {};
+  return {
+    'Access-Control-Allow-Origin': CORS_ORIGIN,
+    'Access-Control-Allow-Credentials': 'true',
+    Vary: 'Origin'
+  };
 }
 
 function cookieHeader(body) {
@@ -40,21 +51,6 @@ function cookieHeader(body) {
 
 function sendError(res, status, message) {
   send(res, status, { error: message });
-}
-
-async function readJson(fileName, fallback) {
-  try {
-    const raw = await fs.readFile(path.join(DATA_DIR, fileName), 'utf8');
-    return JSON.parse(raw);
-  } catch (error) {
-    if (error.code === 'ENOENT') return fallback;
-    throw error;
-  }
-}
-
-async function writeJson(fileName, value) {
-  await fs.mkdir(DATA_DIR, { recursive: true });
-  await fs.writeFile(path.join(DATA_DIR, fileName), JSON.stringify(value, null, 2) + '\n');
 }
 
 async function readArrayJson(fileName) {
@@ -144,11 +140,15 @@ function publicAdmin(admin) {
 }
 
 function sessionCookie(token, maxAge = 60 * 60 * 24 * 7) {
-  return `myeonn_session=${encodeURIComponent(token)}; HttpOnly; SameSite=Lax; Path=/; Max-Age=${maxAge}`;
+  return `myeonn_session=${encodeURIComponent(token)}; HttpOnly; ${cookieSecurity()}; Path=/; Max-Age=${maxAge}`;
 }
 
 function adminSessionCookie(token, maxAge = 60 * 60 * 12) {
-  return `myeonn_admin_session=${encodeURIComponent(token)}; HttpOnly; SameSite=Lax; Path=/; Max-Age=${maxAge}`;
+  return `myeonn_admin_session=${encodeURIComponent(token)}; HttpOnly; ${cookieSecurity()}; Path=/; Max-Age=${maxAge}`;
+}
+
+function cookieSecurity() {
+  return process.env.COOKIE_SECURE === 'true' ? 'SameSite=None; Secure' : 'SameSite=Lax';
 }
 
 async function currentUser(req) {
@@ -536,6 +536,15 @@ async function route(req, res) {
   const adminOrderStatus = url.pathname.match(/^\/api\/admin\/orders\/([^/]+)\/status$/);
   const adminProductStock = url.pathname.match(/^\/api\/admin\/products\/([^/]+)\/stock$/);
 
+  if (req.method === 'OPTIONS') {
+    res.writeHead(204, {
+      ...corsHeaders(),
+      'Access-Control-Allow-Methods': 'GET, POST, PATCH, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type'
+    });
+    return res.end();
+  }
+
   if (req.method === 'GET' && url.pathname === '/api/health') {
     return send(res, 200, { ok: true, name: 'Myeonn backend' });
   }
@@ -583,6 +592,12 @@ const server = http.createServer((req, res) => {
   });
 });
 
-server.listen(PORT, () => {
-  console.log(`Myeonn backend running at http://127.0.0.1:${PORT}`);
+ensureSchema().then(() => {
+  server.listen(PORT, () => {
+    const database = useMySql() ? 'MySQL' : 'local JSON files';
+    console.log(`Myeonn backend running at http://127.0.0.1:${PORT} using ${database}`);
+  });
+}).catch(error => {
+  console.error('Unable to start the Myeonn backend:', error);
+  process.exit(1);
 });
