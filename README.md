@@ -35,6 +35,16 @@ npm run build
 
 `MYSQL_URL` is a server secret. Never add it to the React app, GitHub, or Firebase Hosting settings. The browser only talks to the Node API, and the Node API talks to MySQL.
 
+## Online Payments
+
+Online payment uses Razorpay Checkout for UPI, cards, and netbanking. Add `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, and `RAZORPAY_WEBHOOK_SECRET` to the hosted Node API environment. Configure the Razorpay webhook URL as:
+
+```text
+https://your-myeonn-api.example.com/api/payments/razorpay/webhook
+```
+
+Subscribe to `payment.captured`. Test with Razorpay test keys first, then complete Razorpay activation before changing to live keys. The browser only receives the public key ID; payment verification and all secret keys remain on the backend.
+
 ## What The Backend Does
 
 - Serves the built React app from `dist/`.

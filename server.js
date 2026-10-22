@@ -2,12 +2,14 @@ const http = require('http');
 const fs = require('fs/promises');
 const path = require('path');
 const crypto = require('crypto');
+const Razorpay = require('razorpay');
 const { ensureSchema, readJson, useMySql, writeJson } = require('./database');
 
 const ROOT = __dirname;
 const PORT = Number(process.env.PORT || 5177);
 const DEFAULT_STOCK = 50;
 const CORS_ORIGIN = process.env.CORS_ORIGIN || '';
+let razorpay;
 
 const contentTypes = {
   '.html': 'text/html; charset=utf-8',
@@ -72,6 +74,31 @@ async function readBody(req) {
   return JSON.parse(Buffer.concat(chunks).toString('utf8'));
 }
 
+async function readRawBody(req) {
+  const chunks = [];
+  let size = 0;
+  for await (const chunk of req) {
+    size += chunk.length;
+    if (size > 1_000_000) throw new Error('Request body is too large');
+    chunks.push(chunk);
+  }
+  return Buffer.concat(chunks);
+}
+
+function getRazorpay() {
+  const keyId = process.env.RAZORPAY_KEY_ID;
+  const keySecret = process.env.RAZORPAY_KEY_SECRET;
+  if (!keyId || !keySecret) throw new Error('Online payments are not configured yet. Add Razorpay keys to the backend host.');
+  if (!razorpay) razorpay = new Razorpay({ key_id: keyId, key_secret: keySecret });
+  return razorpay;
+}
+
+function secureMatch(left, right) {
+  const a = Buffer.from(String(left || ''));
+  const b = Buffer.from(String(right || ''));
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+
 function publicOrder(order) {
   return {
     id: order.id,
@@ -80,7 +107,12 @@ function publicOrder(order) {
     items: order.items,
     subtotal: order.subtotal,
     shipping: order.shipping,
-    total: order.total
+    total: order.total,
+    payment: order.payment ? {
+      method: order.payment.method,
+      provider: order.payment.provider,
+      status: order.payment.status
+    } : undefined
   };
 }
 
@@ -192,10 +224,9 @@ async function listProducts(url) {
   }).map(publicProduct);
 }
 
-async function createOrder(req, res) {
-  const body = await readBody(req);
+async function buildOrder(req, body) {
   const incomingItems = Array.isArray(body.items) ? body.items : [];
-  if (!incomingItems.length) return sendError(res, 400, 'Add at least one item before checkout.');
+  if (!incomingItems.length) throw new Error('Add at least one item before checkout.');
 
   const products = await readArrayJson('products.json');
   const orders = await readArrayJson('orders.json');
@@ -243,25 +274,143 @@ async function createOrder(req, res) {
   });
 
   const subtotal = items.reduce((sum, item) => sum + item.lineTotal, 0);
-  const shipping = subtotal >= 999 ? 0 : 99;
+  const couponCode = String(body.customer?.couponCode || '').trim().toUpperCase();
+  const discount = couponCode === 'WELCOME10' ? Math.min(Math.round(subtotal * 0.1), 150) : 0;
+  const shipping = subtotal - discount >= 999 ? 0 : 99;
   const account = publicUser(await currentUser(req));
-  const order = {
+  return {
     id: 'MYN-' + crypto.randomBytes(4).toString('hex').toUpperCase(),
     createdAt: new Date().toISOString(),
     status: 'received',
     customer: {
       ...(body.customer || {}),
-      ...(account ? { account } : {})
+      ...(account ? { account } : {}),
+      couponCode: discount ? couponCode : '',
+      discount
     },
     items,
     subtotal,
     shipping,
-    total: subtotal + shipping
+    total: subtotal - discount + shipping
   };
+}
+
+async function createOrder(req, res) {
+  const body = await readBody(req);
+  const order = await buildOrder(req, body);
+  order.payment = {
+    method: 'Cash on delivery',
+    provider: 'Cash on delivery',
+    status: 'due'
+  };
+  order.customer.paymentMethod = 'Cash on delivery';
+  order.customer.paymentProvider = 'Cash on delivery';
+  order.customer.paymentStatus = 'Payment due on delivery';
+  const orders = await readArrayJson('orders.json');
 
   orders.push(order);
   await writeJson('orders.json', orders);
   send(res, 201, publicOrder(order));
+}
+
+async function createRazorpayOrder(req, res) {
+  const body = await readBody(req);
+  const order = await buildOrder(req, body);
+  const gateway = getRazorpay();
+  const gatewayOrder = await gateway.orders.create({
+    amount: Math.round(order.total * 100),
+    currency: 'INR',
+    receipt: order.id,
+    notes: { store_order_id: order.id }
+  });
+  const intents = await readArrayJson('payment-intents.json');
+  intents.push({
+    id: gatewayOrder.id,
+    order,
+    amount: gatewayOrder.amount,
+    currency: gatewayOrder.currency,
+    status: 'created',
+    createdAt: new Date().toISOString()
+  });
+  await writeJson('payment-intents.json', intents);
+  send(res, 201, {
+    keyId: process.env.RAZORPAY_KEY_ID,
+    orderId: gatewayOrder.id,
+    amount: gatewayOrder.amount,
+    currency: gatewayOrder.currency,
+    receipt: order.id
+  });
+}
+
+async function completeRazorpayPayment(razorpayOrderId, razorpayPaymentId) {
+  const intents = await readArrayJson('payment-intents.json');
+  const intent = intents.find(item => item.id === razorpayOrderId);
+  if (!intent) throw new Error('This payment session was not found. Please start checkout again.');
+  const orders = await readArrayJson('orders.json');
+  if (intent.status === 'paid') return orders.find(order => order.id === intent.order.id) || intent.order;
+
+  const gateway = getRazorpay();
+  let payment = await gateway.payments.fetch(razorpayPaymentId);
+  if (payment.order_id !== razorpayOrderId || Number(payment.amount) !== Number(intent.amount)) {
+    throw new Error('Payment amount could not be verified.');
+  }
+  if (payment.status === 'authorized') payment = await gateway.payments.capture(razorpayPaymentId, intent.amount, intent.currency);
+  if (payment.status !== 'captured') throw new Error('Payment has not been captured yet. Please try again shortly.');
+
+  const products = await readArrayJson('products.json');
+  for (const item of intent.order.items) {
+    const product = products.find(candidate => candidate.id === item.id);
+    const available = product ? Math.max(Number(product.stock ?? DEFAULT_STOCK) - soldQuantity(product, orders), 0) : 0;
+    if (item.qty > available) throw new Error(`${item.name} is no longer available. Contact Myeonn support for a refund.`);
+  }
+
+  const order = {
+    ...intent.order,
+    payment: {
+      method: 'Online payment',
+      provider: 'Razorpay',
+      status: 'paid',
+      razorpayOrderId,
+      razorpayPaymentId
+    },
+    customer: {
+      ...intent.order.customer,
+      paymentMethod: 'Online payment',
+      paymentProvider: 'Razorpay',
+      paymentStatus: 'Paid'
+    }
+  };
+  orders.push(order);
+  intent.status = 'paid';
+  intent.paidAt = new Date().toISOString();
+  intent.razorpayPaymentId = razorpayPaymentId;
+  await Promise.all([writeJson('orders.json', orders), writeJson('payment-intents.json', intents)]);
+  return order;
+}
+
+async function verifyRazorpayPayment(req, res) {
+  const body = await readBody(req);
+  const expected = crypto.createHmac('sha256', process.env.RAZORPAY_KEY_SECRET || '')
+    .update(`${body.razorpay_order_id}|${body.razorpay_payment_id}`)
+    .digest('hex');
+  if (!secureMatch(expected, body.razorpay_signature)) return sendError(res, 400, 'Payment verification failed.');
+  const order = await completeRazorpayPayment(body.razorpay_order_id, body.razorpay_payment_id);
+  send(res, 201, publicOrder(order));
+}
+
+async function handleRazorpayWebhook(req, res) {
+  const rawBody = await readRawBody(req);
+  const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
+  const signature = req.headers['x-razorpay-signature'];
+  if (!webhookSecret) return sendError(res, 503, 'Payment webhook is not configured.');
+  const expected = crypto.createHmac('sha256', webhookSecret).update(rawBody).digest('hex');
+  if (!secureMatch(expected, signature)) return sendError(res, 400, 'Invalid payment webhook signature.');
+  const event = JSON.parse(rawBody.toString('utf8'));
+  const payment = event.payload?.payment?.entity;
+  if (event.event === 'payment.captured' && payment?.order_id && payment?.id) {
+    try { await completeRazorpayPayment(payment.order_id, payment.id); } catch (error) { console.error('Razorpay webhook:', error.message); }
+  }
+  send(res, 200, { ok: true });
 }
 
 async function registerUser(req, res) {
@@ -545,6 +694,10 @@ async function route(req, res) {
     return res.end();
   }
 
+  if (req.method === 'POST' && url.pathname === '/api/payments/razorpay/webhook') {
+    return handleRazorpayWebhook(req, res);
+  }
+
   if (req.method === 'GET' && url.pathname === '/api/health') {
     return send(res, 200, { ok: true, name: 'Myeonn backend' });
   }
@@ -567,6 +720,8 @@ async function route(req, res) {
   if (req.method === 'GET' && url.pathname === '/api/admin/orders') return listAdminOrders(req, res);
   if (req.method === 'POST' && url.pathname === '/api/admin/products') return createAdminProduct(req, res);
   if (req.method === 'POST' && url.pathname === '/api/orders') return createOrder(req, res);
+  if (req.method === 'POST' && url.pathname === '/api/payments/razorpay/order') return createRazorpayOrder(req, res);
+  if (req.method === 'POST' && url.pathname === '/api/payments/razorpay/verify') return verifyRazorpayPayment(req, res);
   if (req.method === 'POST' && url.pathname === '/api/contact') return createMessage(req, res);
   if (req.method === 'POST' && url.pathname === '/api/newsletter') return createSubscriber(req, res);
   if (req.method === 'POST' && url.pathname === '/api/register') return registerUser(req, res);

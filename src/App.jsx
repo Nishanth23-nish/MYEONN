@@ -193,6 +193,22 @@ async function api(path, options = {}) {
   return data;
 }
 
+let razorpayLoader;
+
+function loadRazorpayCheckout() {
+  if (window.Razorpay) return Promise.resolve(window.Razorpay);
+  if (razorpayLoader) return razorpayLoader;
+  razorpayLoader = new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.async = true;
+    script.onload = () => window.Razorpay ? resolve(window.Razorpay) : reject(new Error('Payment checkout could not be loaded.'));
+    script.onerror = () => reject(new Error('Payment checkout could not be loaded. Check your connection and try again.'));
+    document.head.appendChild(script);
+  });
+  return razorpayLoader;
+}
+
 class StoreErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
@@ -333,6 +349,40 @@ function StorefrontApp() {
     if (!cart.length) {
       setToast('Your cart is empty');
       showPage('orders');
+      return;
+    }
+    if (customer?.paymentMethod === 'Online payment') {
+      try {
+        const paymentOrder = await api('/api/payments/razorpay/order', { method: 'POST', body: JSON.stringify({ items: cart, customer }) });
+        const Razorpay = await loadRazorpayCheckout();
+        const checkout = new Razorpay({
+          key: paymentOrder.keyId,
+          amount: paymentOrder.amount,
+          currency: paymentOrder.currency,
+          name: 'Myeonn',
+          description: 'Myeonn clothing order',
+          order_id: paymentOrder.orderId,
+          prefill: { name: customer.name, email: customer.email, contact: customer.phone },
+          notes: { store_order_id: paymentOrder.receipt },
+          theme: { color: '#b98b4f' },
+          handler: async response => {
+            try {
+              const order = await api('/api/payments/razorpay/verify', { method: 'POST', body: JSON.stringify(response) });
+              saveLocalOrder(order);
+              setCart([]);
+              setSiteOrders(orders => mergeOrders([order], orders));
+              setToast(`Payment received. Order ${order.id} is confirmed.`);
+              showPage('orders');
+            } catch (error) {
+              setToast(error.message);
+            }
+          },
+          modal: { ondismiss: () => setToast('Payment was cancelled. Your cart is still saved.') }
+        });
+        checkout.open();
+      } catch (error) {
+        setToast(error.message);
+      }
       return;
     }
     try {
@@ -768,6 +818,9 @@ function OrdersPanel({ orders, setStatus }) {
 }
 
 function paymentState(order) {
+  const payment = order.payment || {};
+  if (payment.status === 'paid') return { label: 'Paid online', className: 'paid' };
+  if (payment.status === 'due') return { label: 'Pay on delivery', className: 'pending' };
   const status = order.status || 'received';
   if (status === 'shipped') return { label: 'Settled', className: 'paid' };
   if (status === 'confirmed') return { label: 'Paid', className: 'paid' };
@@ -809,11 +862,11 @@ function downloadPaymentsReport(orders) {
 }
 
 function PaymentsPanel({ orders }) {
-  const confirmedOrders = orders.filter(order => ['confirmed', 'shipped'].includes(order.status || 'received'));
-  const pendingOrders = orders.filter(order => (order.status || 'received') === 'received');
+  const confirmedOrders = orders.filter(order => order.payment?.status === 'paid' || ['confirmed', 'shipped'].includes(order.status || 'received'));
+  const pendingOrders = orders.filter(order => order.payment?.status !== 'paid' && (order.status || 'received') === 'received');
   const shippedOrders = orders.filter(order => (order.status || 'received') === 'shipped');
   const totalSales = orders.reduce((sum, order) => sum + Number(order.total || 0), 0);
-  const paidAmount = confirmedOrders.reduce((sum, order) => sum + Number(order.total || 0), 0);
+  const paidAmount = orders.filter(order => order.payment?.status === 'paid').reduce((sum, order) => sum + Number(order.total || 0), 0);
   const pendingAmount = pendingOrders.reduce((sum, order) => sum + Number(order.total || 0), 0);
   const settledAmount = shippedOrders.reduce((sum, order) => sum + Number(order.total || 0), 0);
   return <div><div className="admin-section-title"><div><div className="sec-label">Payments</div><div className="sec-title">Payment overview</div></div><button className="btn-outline-dark" onClick={() => downloadPaymentsReport(orders)} disabled={!orders.length}>Download report</button></div><div className="payment-metrics"><div className="stock-metric"><span>Total orders</span><strong>{orders.length}</strong></div><div className="stock-metric"><span>Total sales</span><strong>{price(totalSales)}</strong></div><div className="stock-metric"><span>Paid amount</span><strong>{price(paidAmount)}</strong></div><div className="stock-metric"><span>Pending</span><strong>{price(pendingAmount)}</strong></div><div className="stock-metric"><span>Settled</span><strong>{price(settledAmount)}</strong></div></div><div className="payment-card"><div className="payment-head"><div><div className="sec-label">Transactions</div><div className="payment-title">Order payments</div></div><span>Online payment</span></div>{orders.length ? <div className="payment-table"><div className="payment-row payment-row-head"><span>Order</span><span>Customer</span><span>Method</span><span>Status</span><span>Total</span></div>{orders.map(order => { const customer = order.customer || {}; const state = paymentState(order); return <div className="payment-row" key={order.id}><span><strong>{order.id}</strong><small>{order.createdAt ? new Date(order.createdAt).toLocaleString('en-IN') : 'No date'}</small></span><span><strong>{customer.name || 'Customer'}</strong><small>{customer.email || customer.phone || 'No contact'}</small></span><span>{paymentMethodLabel(order)}</span><span><b className={`payment-pill ${state.className}`}>{state.label}</b></span><span><strong>{price(order.total)}</strong><small>{order.shipping ? `Shipping ${price(order.shipping)}` : 'Free shipping'}</small></span></div>; })}</div> : <div className="cart-empty">No payments yet. New order payments will appear here.</div>}</div></div>;
@@ -1061,9 +1114,11 @@ function CheckoutPage({ user, cart, placeOrder, showPage, setToast }) {
     return <main className="page active"><section className="contact-hero"><div className="sec-label" style={{ color: '#D4AF82', textAlign: 'center' }}>Checkout</div><h1 className="hero-h1" style={{ color: '#F5F0E8', textAlign: 'center', fontSize: 44 }}>Your cart is empty</h1></section><section className="sec"><button className="btn-gold" onClick={() => showPage('kids')}>Continue shopping</button></section></main>;
   }
 
+  const actionLabel = form.paymentMethod === 'Online payment' ? `Pay ${price(totals.total)} securely` : 'Place order';
+
   return <main className="page active" id="page-checkout">
     <section className="contact-hero"><div className="sec-label" style={{ color: '#D4AF82', textAlign: 'center' }}>Checkout</div><h1 className="hero-h1" style={{ color: '#F5F0E8', textAlign: 'center', fontSize: 44 }}>Complete your order</h1><p style={{ color: '#A89F93', textAlign: 'center', marginTop: 12, fontSize: 14 }}>Review your cart and add delivery details</p></section>
-    <section className="sec"><div className="checkout-grid"><div className="checkout-card"><div className="sec-label">Delivery</div><div className="sec-title" style={{ marginBottom: 24 }}>Shipping details</div><Field label="Full name" value={form.name} onChange={name => setForm({ ...form, name })} placeholder="Your name" /><Field label="Email" type="email" value={form.email} onChange={email => setForm({ ...form, email })} placeholder="you@email.com" /><div className="form-row"><Field label="Phone number" type="tel" value={form.phone} onChange={phone => setForm({ ...form, phone })} placeholder="+91 98765 43210" /><Field label="Alternate phone" type="tel" value={form.altPhone} onChange={altPhone => setForm({ ...form, altPhone })} placeholder="+91 98765 43210" /></div><div className="form-field"><label>Address</label><textarea value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} placeholder="House number, street, area" /></div><Field label="Landmark / nearby place" value={form.landmark} onChange={landmark => setForm({ ...form, landmark })} placeholder="Near school, temple, main road" /><div className="form-row"><Field label="City" value={form.city} onChange={city => setForm({ ...form, city })} placeholder="Mumbai" /><Field label="State" value={form.state} onChange={state => setForm({ ...form, state })} placeholder="Maharashtra" /></div><div className="form-row"><Field label="Pincode" value={form.pincode} onChange={pincode => setForm({ ...form, pincode })} placeholder="400050" /><Field label="Country" value={form.country} onChange={country => setForm({ ...form, country })} placeholder="India" /></div><div className="payment-choice"><div className="sec-label">Payment</div><div className="payment-choice-title">Choose payment method</div><div className="payment-options"><button type="button" className={form.paymentMethod === 'Cash on delivery' ? 'active' : ''} onClick={() => selectPayment('Cash on delivery')}><i className="ti ti-cash" /><span>Cash on delivery</span><small>Pay when your order arrives</small></button><button type="button" className={form.paymentMethod === 'Online payment' ? 'active' : ''} onClick={() => selectPayment('Online payment')}><i className="ti ti-credit-card" /><span>Online payment</span><small>UPI, card, netbanking</small></button></div><div className="payment-note">{form.paymentMethod === 'Cash on delivery' ? 'Your order will be confirmed first. Payment is collected at delivery.' : 'Online payment is selected. A payment gateway must be connected before live charges can be accepted.'}</div></div><div className="account-actions"><button className="btn-gold" onClick={submit}>Place order</button><button className="btn-outline-dark" onClick={() => showPage('kids')}>Continue shopping</button></div></div><div className="checkout-card"><div className="sec-label">Summary</div><div className="sec-title" style={{ marginBottom: 24 }}>Order total</div><div className="checkout-items">{cart.map(item => <div className="checkout-row" key={`${item.id}-${item.size || 'size'}`}><div><div className="cart-name">{item.name}</div><div className="cart-meta">{item.meta} · Size {item.size || 'Not selected'} · Qty {item.qty}</div></div><div className="cart-name">{price(item.price * item.qty)}</div></div>)}</div><div className="coupon-box"><label htmlFor="coupon-code">Coupon code</label><div><input id="coupon-code" value={couponInput} onChange={event => setCouponInput(event.target.value)} placeholder="WELCOME10" /><button className="btn-outline-dark" onClick={applyCoupon}>Apply</button></div><small>Use WELCOME10 to save 10%, up to ₹150.</small></div><div className="checkout-totals"><div><span>Payment</span><strong>{form.paymentMethod}</strong></div><div><span>Subtotal</span><strong>{price(totals.subtotal)}</strong></div>{totals.discount > 0 && <div><span>Discount ({totals.coupon})</span><strong>-{price(totals.discount)}</strong></div>}<div><span>Shipping</span><strong>{totals.shipping ? price(totals.shipping) : 'Free'}</strong></div><div className="checkout-grand"><span>Total</span><strong>{price(totals.total)}</strong></div></div></div></div></section>
+    <section className="sec"><div className="checkout-grid"><div className="checkout-card"><div className="sec-label">Delivery</div><div className="sec-title" style={{ marginBottom: 24 }}>Shipping details</div><Field label="Full name" value={form.name} onChange={name => setForm({ ...form, name })} placeholder="Your name" /><Field label="Email" type="email" value={form.email} onChange={email => setForm({ ...form, email })} placeholder="you@email.com" /><div className="form-row"><Field label="Phone number" type="tel" value={form.phone} onChange={phone => setForm({ ...form, phone })} placeholder="+91 98765 43210" /><Field label="Alternate phone" type="tel" value={form.altPhone} onChange={altPhone => setForm({ ...form, altPhone })} placeholder="+91 98765 43210" /></div><div className="form-field"><label>Address</label><textarea value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} placeholder="House number, street, area" /></div><Field label="Landmark / nearby place" value={form.landmark} onChange={landmark => setForm({ ...form, landmark })} placeholder="Near school, temple, main road" /><div className="form-row"><Field label="City" value={form.city} onChange={city => setForm({ ...form, city })} placeholder="Mumbai" /><Field label="State" value={form.state} onChange={state => setForm({ ...form, state })} placeholder="Maharashtra" /></div><div className="form-row"><Field label="Pincode" value={form.pincode} onChange={pincode => setForm({ ...form, pincode })} placeholder="400050" /><Field label="Country" value={form.country} onChange={country => setForm({ ...form, country })} placeholder="India" /></div><div className="payment-choice"><div className="sec-label">Payment</div><div className="payment-choice-title">Choose payment method</div><div className="payment-options"><button type="button" className={form.paymentMethod === 'Cash on delivery' ? 'active' : ''} onClick={() => selectPayment('Cash on delivery')}><i className="ti ti-cash" /><span>Cash on delivery</span><small>Pay when your order arrives</small></button><button type="button" className={form.paymentMethod === 'Online payment' ? 'active' : ''} onClick={() => selectPayment('Online payment')}><i className="ti ti-credit-card" /><span>Online payment</span><small>UPI, card, netbanking</small></button></div><div className="payment-note">{form.paymentMethod === 'Cash on delivery' ? 'Your order will be confirmed first. Payment is collected at delivery.' : 'Secure Razorpay checkout supports UPI, cards, and netbanking. Payment is verified by Myeonn before the order is created.'}</div></div><div className="account-actions"><button className="btn-gold" onClick={submit}>{actionLabel}</button><button className="btn-outline-dark" onClick={() => showPage('kids')}>Continue shopping</button></div></div><div className="checkout-card"><div className="sec-label">Summary</div><div className="sec-title" style={{ marginBottom: 24 }}>Order total</div><div className="checkout-items">{cart.map(item => <div className="checkout-row" key={`${item.id}-${item.size || 'size'}`}><div><div className="cart-name">{item.name}</div><div className="cart-meta">{item.meta} · Size {item.size || 'Not selected'} · Qty {item.qty}</div></div><div className="cart-name">{price(item.price * item.qty)}</div></div>)}</div><div className="coupon-box"><label htmlFor="coupon-code">Coupon code</label><div><input id="coupon-code" value={couponInput} onChange={event => setCouponInput(event.target.value)} placeholder="WELCOME10" /><button className="btn-outline-dark" onClick={applyCoupon}>Apply</button></div><small>Use WELCOME10 to save 10%, up to ₹150.</small></div><div className="checkout-totals"><div><span>Payment</span><strong>{form.paymentMethod}</strong></div><div><span>Subtotal</span><strong>{price(totals.subtotal)}</strong></div>{totals.discount > 0 && <div><span>Discount ({totals.coupon})</span><strong>-{price(totals.discount)}</strong></div>}<div><span>Shipping</span><strong>{totals.shipping ? price(totals.shipping) : 'Free'}</strong></div><div className="checkout-grand"><span>Total</span><strong>{price(totals.total)}</strong></div></div></div></div></section>
   </main>;
 }
 
