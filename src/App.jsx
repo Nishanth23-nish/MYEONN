@@ -657,7 +657,7 @@ function AdminPage({ admin, products, setProducts, setAdmin, setUser, showPage, 
     return <main className="page active"><section className="contact-hero"><div className="sec-label" style={{ color: '#D4AF82', textAlign: 'center' }}>Admin</div><h1 className="hero-h1" style={{ color: '#F5F0E8', textAlign: 'center', fontSize: 44 }}>Admin login</h1><p style={{ color: '#A89F93', textAlign: 'center', marginTop: 12, fontSize: 14 }}>Sign in here to confirm orders and mark packs as shipped</p></section><section className="sec"><div className="admin-login-card"><div className="sec-label">Order desk</div><div className="sec-title" style={{ marginBottom: 24 }}>Manager access</div><Field label="Admin email" type="email" value={login.email} onChange={email => setLogin({ ...login, email })} placeholder="admin@myeonn.com" /><PasswordField value={login.password} onChange={password => setLogin({ ...login, password })} showing={showPassword} toggle={() => setShowPassword(!showPassword)} placeholder="Admin password" /><div className="account-actions"><button className="btn-gold" onClick={submitLogin}>Login as admin</button><button className="btn-outline-dark" onClick={() => showPage('login')}>Login as user</button></div></div></section></main>;
   }
 
-  return <main className="page active admin-page"><AdminSidebar active={activeSection} setActive={setActiveSection} /><section className="admin-content"><div className="admin-toolbar"><div><div className="sec-label">Seller dashboard</div><div className="admin-name">{admin.name}</div><div className="admin-email">{admin.email}</div></div><div className="account-actions"><button className="btn-outline-dark" onClick={loadOrders}>{loading ? 'Refreshing...' : 'Refresh dashboard'}</button><button className="btn-dark" onClick={logout}>Sign out</button></div></div>{activeSection === 'home' && <AdminHome summary={stockSummary} orders={orders} />}{activeSection === 'listings' && <ListingsPanel rows={stockRows} />}{activeSection === 'add-product' && <AddProductPanel key={editingProduct?.id || 'new-product'} addProduct={addProduct} product={editingProduct} cancelEdit={() => setEditingProduct(null)} />}{activeSection === 'inventory' && <StockDashboard rows={stockRows} summary={stockSummary} editStock={editStock} editProduct={editProduct} />}{activeSection === 'orders' && <OrdersPanel orders={orders} setStatus={setStatus} />}{activeSection === 'payments' && <PaymentsPanel orders={orders} />}{['growth', 'ads', 'reports', 'partner'].includes(activeSection) && <AdminPlaceholder section={activeSection} />}</section></main>;
+  return <main className="page active admin-page"><AdminSidebar active={activeSection} setActive={setActiveSection} /><section className="admin-content"><div className="admin-toolbar"><div><div className="sec-label">Seller dashboard</div><div className="admin-name">{admin.name}</div><div className="admin-email">{admin.email}</div></div><div className="account-actions"><button className="btn-outline-dark" onClick={loadOrders}>{loading ? 'Refreshing...' : 'Refresh dashboard'}</button><button className="btn-dark" onClick={logout}>Sign out</button></div></div>{activeSection === 'home' && <AdminHome summary={stockSummary} orders={orders} />}{activeSection === 'listings' && <ListingsPanel rows={stockRows} />}{activeSection === 'add-product' && <AddProductPanel key={editingProduct?.id || 'new-product'} addProduct={addProduct} product={editingProduct} cancelEdit={() => setEditingProduct(null)} />}{activeSection === 'inventory' && <StockDashboard rows={stockRows} summary={stockSummary} editStock={editStock} editProduct={editProduct} />}{activeSection === 'orders' && <OrdersPanel orders={orders} setStatus={setStatus} />}{activeSection === 'payments' && <PaymentsPanel orders={orders} />}{activeSection === 'growth' && <GrowthPanel orders={orders} />}{['ads', 'reports', 'partner'].includes(activeSection) && <AdminPlaceholder section={activeSection} />}</section></main>;
 }
 
 function AdminSidebar({ active, setActive }) {
@@ -820,6 +820,47 @@ function PaymentsPanel({ orders }) {
   const pendingAmount = pendingOrders.reduce((sum, order) => sum + Number(order.total || 0), 0);
   const settledAmount = shippedOrders.reduce((sum, order) => sum + Number(order.total || 0), 0);
   return <div><div className="admin-section-title"><div><div className="sec-label">Payments</div><div className="sec-title">Payment overview</div></div><button className="btn-outline-dark" onClick={() => downloadPaymentsReport(orders)} disabled={!orders.length}>Download report</button></div><div className="payment-metrics"><div className="stock-metric"><span>Total orders</span><strong>{orders.length}</strong></div><div className="stock-metric"><span>Total sales</span><strong>{price(totalSales)}</strong></div><div className="stock-metric"><span>Paid amount</span><strong>{price(paidAmount)}</strong></div><div className="stock-metric"><span>Pending</span><strong>{price(pendingAmount)}</strong></div><div className="stock-metric"><span>Settled</span><strong>{price(settledAmount)}</strong></div></div><div className="payment-card"><div className="payment-head"><div><div className="sec-label">Transactions</div><div className="payment-title">Order payments</div></div><span>Online payment</span></div>{orders.length ? <div className="payment-table"><div className="payment-row payment-row-head"><span>Order</span><span>Customer</span><span>Method</span><span>Status</span><span>Total</span></div>{orders.map(order => { const customer = order.customer || {}; const state = paymentState(order); return <div className="payment-row" key={order.id}><span><strong>{order.id}</strong><small>{order.createdAt ? new Date(order.createdAt).toLocaleString('en-IN') : 'No date'}</small></span><span><strong>{customer.name || 'Customer'}</strong><small>{customer.email || customer.phone || 'No contact'}</small></span><span>{paymentMethodLabel(order)}</span><span><b className={`payment-pill ${state.className}`}>{state.label}</b></span><span><strong>{price(order.total)}</strong><small>{order.shipping ? `Shipping ${price(order.shipping)}` : 'Free shipping'}</small></span></div>; })}</div> : <div className="cart-empty">No payments yet. New order payments will appear here.</div>}</div></div>;
+}
+
+function GrowthPanel({ orders }) {
+  const now = new Date();
+  const dayStart = date => new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const today = dayStart(now);
+  const weekStart = new Date(today);
+  weekStart.setDate(today.getDate() - 6);
+  const recentOrders = orders.filter(order => {
+    const date = new Date(order.createdAt || 0);
+    return !Number.isNaN(date.valueOf()) && date >= weekStart;
+  });
+  const weeklyRevenue = recentOrders.reduce((sum, order) => sum + Number(order.total || 0), 0);
+  const totalRevenue = orders.reduce((sum, order) => sum + Number(order.total || 0), 0);
+  const averageOrder = orders.length ? Math.round(totalRevenue / orders.length) : 0;
+  const uniqueCustomers = new Set(orders.map(order => order.customer?.email || order.customer?.phone).filter(Boolean)).size;
+  const trend = Array.from({ length: 7 }, (_, index) => {
+    const date = new Date(weekStart);
+    date.setDate(weekStart.getDate() + index);
+    const key = date.toDateString();
+    const dayOrders = orders.filter(order => new Date(order.createdAt || 0).toDateString() === key);
+    return {
+      key,
+      label: date.toLocaleDateString('en-IN', { weekday: 'short' }),
+      orders: dayOrders.length,
+      revenue: dayOrders.reduce((sum, order) => sum + Number(order.total || 0), 0)
+    };
+  });
+  const peakRevenue = Math.max(...trend.map(day => day.revenue), 1);
+  const topProducts = Object.values(orders.reduce((items, order) => {
+    (order.items || []).forEach(item => {
+      const current = items[item.id] || { id: item.id, name: item.name, qty: 0, revenue: 0 };
+      current.qty += Number(item.qty || 0);
+      current.revenue += Number(item.lineTotal || Number(item.price || 0) * Number(item.qty || 0));
+      items[item.id] = current;
+    });
+    return items;
+  }, {})).sort((a, b) => b.revenue - a.revenue).slice(0, 5);
+  const statusCounts = ['received', 'confirmed', 'shipped'].map(status => ({ status, count: orders.filter(order => (order.status || 'received') === status).length }));
+  const cards = [['Sales in 7 days', price(weeklyRevenue)], ['Orders in 7 days', recentOrders.length], ['Average order', price(averageOrder)], ['Customers', uniqueCustomers]];
+  return <div className="growth-dashboard"><div className="admin-section-title"><div><div className="sec-label">Growth</div><div className="sec-title">Store performance</div></div></div><div className="stock-metrics growth-metrics">{cards.map(([label, value]) => <div className="stock-metric" key={label}><span>{label}</span><strong>{value}</strong></div>)}</div><div className="growth-grid"><section className="growth-panel"><div className="growth-panel-head"><div><div className="sec-label">Sales trend</div><h3>Last 7 days</h3></div><strong>{price(weeklyRevenue)}</strong></div><div className="growth-chart">{trend.map(day => <div className="growth-bar" key={day.key}><div className="growth-bar-value">{day.revenue ? price(day.revenue) : ''}</div><div className="growth-bar-track"><div className="growth-bar-fill" style={{ height: `${Math.max(day.revenue ? 12 : 0, Math.round(day.revenue / peakRevenue * 100))}%` }} /></div><span>{day.label}</span></div>)}</div></section><section className="growth-panel"><div className="growth-panel-head"><div><div className="sec-label">Order status</div><h3>Fulfilment pipeline</h3></div><strong>{orders.length} total</strong></div><div className="growth-status-list">{statusCounts.map(item => <div key={item.status}><span><b className={`status-dot ${item.status}`} />{item.status}</span><strong>{item.count}</strong></div>)}</div></section></div><section className="growth-panel growth-products"><div className="growth-panel-head"><div><div className="sec-label">Product demand</div><h3>Top products by sales</h3></div></div>{topProducts.length ? <div className="growth-product-list">{topProducts.map((product, index) => <div key={product.id || product.name}><span className="growth-rank">{index + 1}</span><span className="growth-product-name"><strong>{product.name}</strong><small>{product.qty} units sold</small></span><strong>{price(product.revenue)}</strong></div>)}</div> : <div className="cart-empty">Sales data will appear here after your first order.</div>}</section></div>;
 }
 
 function AdminPlaceholder({ section }) {

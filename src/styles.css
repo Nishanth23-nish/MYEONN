@@ -262,6 +262,30 @@ nav{background:#0A0A0A;padding:0 48px;display:flex;align-items:center;justify-co
 .admin-empty-panel i{font-size:36px;color:#D4AF82;}
 .admin-empty-panel strong{font-size:18px;font-family:Georgia,serif;color:#1A1714;font-weight:400;}
 .admin-empty-panel span{font-size:13px;}
+.growth-grid{display:grid;grid-template-columns:1.5fr 1fr;gap:16px;margin-bottom:16px;}
+.growth-panel{background:#fff;border:.5px solid #DDD8CF;border-radius:8px;padding:20px;}
+.growth-panel-head{display:flex;justify-content:space-between;align-items:start;gap:16px;margin-bottom:18px;}
+.growth-panel-head h3{font-family:Georgia,serif;font-size:20px;font-weight:400;margin:5px 0 0;color:#1A1714;}
+.growth-panel-head>strong{font-family:Georgia,serif;font-size:20px;font-weight:400;color:#1A1714;white-space:nowrap;}
+.growth-chart{height:205px;display:grid;grid-template-columns:repeat(7,1fr);gap:10px;align-items:end;border-bottom:.5px solid #DDD8CF;padding:8px 4px 0;}
+.growth-bar{height:100%;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:end;gap:7px;}
+.growth-bar-track{height:160px;width:100%;display:flex;align-items:end;background:#F5F1EA;border-radius:3px 3px 0 0;overflow:hidden;}
+.growth-bar-fill{width:100%;background:#C89C5B;border-radius:3px 3px 0 0;transition:height .2s ease;}
+.growth-bar-value{font-size:10px;color:#74685D;height:13px;white-space:nowrap;}
+.growth-bar span{font-size:10px;color:#74685D;text-transform:uppercase;letter-spacing:.7px;}
+.growth-status-list{display:flex;flex-direction:column;gap:14px;padding-top:9px;}
+.growth-status-list>div{display:flex;justify-content:space-between;align-items:center;border-bottom:.5px solid #EEEAE4;padding-bottom:13px;text-transform:capitalize;font-size:13px;}
+.growth-status-list>div:last-child{border:0;padding-bottom:0;}
+.growth-status-list span{display:flex;align-items:center;gap:9px;color:#605950;}
+.growth-status-list strong{font-family:Georgia,serif;font-size:20px;font-weight:400;}
+.status-dot{height:8px;width:8px;border-radius:50%;display:inline-block;background:#B09B7B;}
+.status-dot.confirmed{background:#C89C5B;}.status-dot.shipped{background:#4F8563;}
+.growth-products{margin-bottom:24px;}
+.growth-product-list{display:flex;flex-direction:column;}
+.growth-product-list>div{display:grid;grid-template-columns:34px 1fr auto;align-items:center;gap:10px;border-top:.5px solid #EEEAE4;padding:13px 0;}
+.growth-rank{width:25px;height:25px;border-radius:50%;background:#F5F1EA;display:grid;place-items:center;color:#8A714E;font-size:12px;}
+.growth-product-name{display:flex;flex-direction:column;gap:2px;}.growth-product-name strong{font-size:13px;}.growth-product-name small{font-size:11px;color:#7A7068;}
+.growth-product-list>div>strong{font-family:Georgia,serif;font-size:16px;font-weight:400;}
 .order-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:0 0 18px;}
 .order-tab{border:0.5px solid #DDD8CF;background:#fff;border-radius:6px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;color:#5A5248;font-size:11px;letter-spacing:1.2px;text-transform:uppercase;}
 .order-tab span{min-width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:#F2EDE5;color:#1A1714;font-size:12px;letter-spacing:0;font-weight:700;}
@@ -466,6 +490,7 @@ footer{background:#060606;padding:48px 48px 28px;}
   .listing-row{background:#fff;border:0.5px solid #DDD8CF;border-radius:8px;grid-template-columns:1fr 1fr;padding:16px;}
   .listing-head{display:none;}
   .payment-metrics{grid-template-columns:repeat(2,1fr);}
+  .growth-grid{grid-template-columns:1fr;}
   .payment-card{background:transparent;border:0;display:grid;gap:12px;}
   .payment-head{background:#fff;border:0.5px solid #DDD8CF;border-radius:8px;}
   .payment-row{background:#fff;border:0.5px solid #DDD8CF;border-radius:8px;grid-template-columns:1fr 1fr;padding:16px;}
@@ -488,6 +513,10 @@ footer{background:#060606;padding:48px 48px 28px;}
   .order-tabs{grid-template-columns:1fr;}
   .order-bulk-bar,.order-head-main{align-items:flex-start;flex-direction:column;}
   .payment-metrics{grid-template-columns:1fr;}
+  .growth-metrics{grid-template-columns:repeat(2,1fr);}
+  .growth-panel{padding:16px;}
+  .growth-chart{gap:5px;}
+  .growth-bar-value{font-size:8px;}
   .payment-head{align-items:flex-start;flex-direction:column;}
   .payment-row{grid-template-columns:1fr;}
   .user-order-head{flex-direction:column;}
