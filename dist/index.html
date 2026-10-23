@@ -5,10 +5,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Myeonn — Clothing for Kids & Men</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" />
-    <script type="module" crossorigin src="/MYEONN/assets/index-B0KaRIC4.js"></script>
-    <link rel="stylesheet" crossorigin href="/MYEONN/assets/index-BtsJleyw.css">
+    <script type="module" crossorigin src="/assets/myeonn.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index.css">
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      // GitHub Pages can be configured to serve the repository root. In that
+      // mode it cannot compile the Vite source entry above, so load the checked-in production bundle.
+      if (location.hostname.endsWith('github.io')) {
+        setTimeout(() => {
+          if (document.getElementById('root').childElementCount) return;
+          const styles = document.createElement('link');
+          styles.rel = 'stylesheet';
+          styles.href = '/MYEONN/assets/index.css';
+          document.head.appendChild(styles);
+          const app = document.createElement('script');
+          app.type = 'module';
+          app.src = '/MYEONN/assets/myeonn.js';
+          document.head.appendChild(app);
+        }, 400);
+      }
+    </script>
   </body>
 </html>

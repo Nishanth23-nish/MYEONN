@@ -193,22 +193,6 @@ async function api(path, options = {}) {
   return data;
 }
 
-let razorpayLoader;
-
-function loadRazorpayCheckout() {
-  if (window.Razorpay) return Promise.resolve(window.Razorpay);
-  if (razorpayLoader) return razorpayLoader;
-  razorpayLoader = new Promise((resolve, reject) => {
-    const script = document.createElement('script');
-    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-    script.async = true;
-    script.onload = () => window.Razorpay ? resolve(window.Razorpay) : reject(new Error('Payment checkout could not be loaded.'));
-    script.onerror = () => reject(new Error('Payment checkout could not be loaded. Check your connection and try again.'));
-    document.head.appendChild(script);
-  });
-  return razorpayLoader;
-}
-
 class StoreErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
@@ -349,40 +333,6 @@ function StorefrontApp() {
     if (!cart.length) {
       setToast('Your cart is empty');
       showPage('orders');
-      return;
-    }
-    if (customer?.paymentMethod === 'Online payment') {
-      try {
-        const paymentOrder = await api('/api/payments/razorpay/order', { method: 'POST', body: JSON.stringify({ items: cart, customer }) });
-        const Razorpay = await loadRazorpayCheckout();
-        const checkout = new Razorpay({
-          key: paymentOrder.keyId,
-          amount: paymentOrder.amount,
-          currency: paymentOrder.currency,
-          name: 'Myeonn',
-          description: 'Myeonn clothing order',
-          order_id: paymentOrder.orderId,
-          prefill: { name: customer.name, email: customer.email, contact: customer.phone },
-          notes: { store_order_id: paymentOrder.receipt },
-          theme: { color: '#b98b4f' },
-          handler: async response => {
-            try {
-              const order = await api('/api/payments/razorpay/verify', { method: 'POST', body: JSON.stringify(response) });
-              saveLocalOrder(order);
-              setCart([]);
-              setSiteOrders(orders => mergeOrders([order], orders));
-              setToast(`Payment received. Order ${order.id} is confirmed.`);
-              showPage('orders');
-            } catch (error) {
-              setToast(error.message);
-            }
-          },
-          modal: { ondismiss: () => setToast('Payment was cancelled. Your cart is still saved.') }
-        });
-        checkout.open();
-      } catch (error) {
-        setToast(error.message);
-      }
       return;
     }
     try {
@@ -1082,7 +1032,8 @@ function CheckoutPage({ user, cart, placeOrder, showPage, setToast }) {
     country: 'India',
     paymentMethod: 'Cash on delivery',
     paymentProvider: 'Pay on delivery',
-    paymentStatus: 'Payment due on delivery'
+    paymentStatus: 'Payment due on delivery',
+    paymentDetails: { type: 'UPI', value: '' }
   });
   const [couponInput, setCouponInput] = useState('');
   const [couponCode, setCouponCode] = useState('');
@@ -1090,7 +1041,7 @@ function CheckoutPage({ user, cart, placeOrder, showPage, setToast }) {
 
   const selectPayment = paymentMethod => setForm(current => paymentMethod === 'Cash on delivery'
     ? { ...current, paymentMethod, paymentProvider: 'Pay on delivery', paymentStatus: 'Payment due on delivery' }
-    : { ...current, paymentMethod, paymentProvider: 'UPI / Card / Netbanking', paymentStatus: 'Payment pending' });
+    : { ...current, paymentMethod, paymentProvider: 'Payment details submission', paymentStatus: 'Payment details submitted' });
 
   const applyCoupon = () => {
     if (couponInput.trim().toUpperCase() === 'WELCOME10') {
@@ -1107,6 +1058,10 @@ function CheckoutPage({ user, cart, placeOrder, showPage, setToast }) {
       setToast('Please fill all delivery details.');
       return;
     }
+    if (form.paymentMethod === 'Online payment' && !form.paymentDetails.value.trim()) {
+      setToast('Please enter your payment detail before placing the order.');
+      return;
+    }
     placeOrder({ ...form, userId: user?.id || null, couponCode: totals.coupon, discount: totals.discount });
   };
 
@@ -1114,11 +1069,11 @@ function CheckoutPage({ user, cart, placeOrder, showPage, setToast }) {
     return <main className="page active"><section className="contact-hero"><div className="sec-label" style={{ color: '#D4AF82', textAlign: 'center' }}>Checkout</div><h1 className="hero-h1" style={{ color: '#F5F0E8', textAlign: 'center', fontSize: 44 }}>Your cart is empty</h1></section><section className="sec"><button className="btn-gold" onClick={() => showPage('kids')}>Continue shopping</button></section></main>;
   }
 
-  const actionLabel = form.paymentMethod === 'Online payment' ? `Pay ${price(totals.total)} securely` : 'Place order';
+  const actionLabel = form.paymentMethod === 'Online payment' ? 'Submit details & place order' : 'Place order';
 
   return <main className="page active" id="page-checkout">
     <section className="contact-hero"><div className="sec-label" style={{ color: '#D4AF82', textAlign: 'center' }}>Checkout</div><h1 className="hero-h1" style={{ color: '#F5F0E8', textAlign: 'center', fontSize: 44 }}>Complete your order</h1><p style={{ color: '#A89F93', textAlign: 'center', marginTop: 12, fontSize: 14 }}>Review your cart and add delivery details</p></section>
-    <section className="sec"><div className="checkout-grid"><div className="checkout-card"><div className="sec-label">Delivery</div><div className="sec-title" style={{ marginBottom: 24 }}>Shipping details</div><Field label="Full name" value={form.name} onChange={name => setForm({ ...form, name })} placeholder="Your name" /><Field label="Email" type="email" value={form.email} onChange={email => setForm({ ...form, email })} placeholder="you@email.com" /><div className="form-row"><Field label="Phone number" type="tel" value={form.phone} onChange={phone => setForm({ ...form, phone })} placeholder="+91 98765 43210" /><Field label="Alternate phone" type="tel" value={form.altPhone} onChange={altPhone => setForm({ ...form, altPhone })} placeholder="+91 98765 43210" /></div><div className="form-field"><label>Address</label><textarea value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} placeholder="House number, street, area" /></div><Field label="Landmark / nearby place" value={form.landmark} onChange={landmark => setForm({ ...form, landmark })} placeholder="Near school, temple, main road" /><div className="form-row"><Field label="City" value={form.city} onChange={city => setForm({ ...form, city })} placeholder="Mumbai" /><Field label="State" value={form.state} onChange={state => setForm({ ...form, state })} placeholder="Maharashtra" /></div><div className="form-row"><Field label="Pincode" value={form.pincode} onChange={pincode => setForm({ ...form, pincode })} placeholder="400050" /><Field label="Country" value={form.country} onChange={country => setForm({ ...form, country })} placeholder="India" /></div><div className="payment-choice"><div className="sec-label">Payment</div><div className="payment-choice-title">Choose payment method</div><div className="payment-options"><button type="button" className={form.paymentMethod === 'Cash on delivery' ? 'active' : ''} onClick={() => selectPayment('Cash on delivery')}><i className="ti ti-cash" /><span>Cash on delivery</span><small>Pay when your order arrives</small></button><button type="button" className={form.paymentMethod === 'Online payment' ? 'active' : ''} onClick={() => selectPayment('Online payment')}><i className="ti ti-credit-card" /><span>Online payment</span><small>UPI, card, netbanking</small></button></div><div className="payment-note">{form.paymentMethod === 'Cash on delivery' ? 'Your order will be confirmed first. Payment is collected at delivery.' : 'Secure Razorpay checkout supports UPI, cards, and netbanking. Payment is verified by Myeonn before the order is created.'}</div></div><div className="account-actions"><button className="btn-gold" onClick={submit}>{actionLabel}</button><button className="btn-outline-dark" onClick={() => showPage('kids')}>Continue shopping</button></div></div><div className="checkout-card"><div className="sec-label">Summary</div><div className="sec-title" style={{ marginBottom: 24 }}>Order total</div><div className="checkout-items">{cart.map(item => <div className="checkout-row" key={`${item.id}-${item.size || 'size'}`}><div><div className="cart-name">{item.name}</div><div className="cart-meta">{item.meta} · Size {item.size || 'Not selected'} · Qty {item.qty}</div></div><div className="cart-name">{price(item.price * item.qty)}</div></div>)}</div><div className="coupon-box"><label htmlFor="coupon-code">Coupon code</label><div><input id="coupon-code" value={couponInput} onChange={event => setCouponInput(event.target.value)} placeholder="WELCOME10" /><button className="btn-outline-dark" onClick={applyCoupon}>Apply</button></div><small>Use WELCOME10 to save 10%, up to ₹150.</small></div><div className="checkout-totals"><div><span>Payment</span><strong>{form.paymentMethod}</strong></div><div><span>Subtotal</span><strong>{price(totals.subtotal)}</strong></div>{totals.discount > 0 && <div><span>Discount ({totals.coupon})</span><strong>-{price(totals.discount)}</strong></div>}<div><span>Shipping</span><strong>{totals.shipping ? price(totals.shipping) : 'Free'}</strong></div><div className="checkout-grand"><span>Total</span><strong>{price(totals.total)}</strong></div></div></div></div></section>
+    <section className="sec"><div className="checkout-grid"><div className="checkout-card"><div className="sec-label">Delivery</div><div className="sec-title" style={{ marginBottom: 24 }}>Shipping details</div><Field label="Full name" value={form.name} onChange={name => setForm({ ...form, name })} placeholder="Your name" /><Field label="Email" type="email" value={form.email} onChange={email => setForm({ ...form, email })} placeholder="you@email.com" /><div className="form-row"><Field label="Phone number" type="tel" value={form.phone} onChange={phone => setForm({ ...form, phone })} placeholder="+91 98765 43210" /><Field label="Alternate phone" type="tel" value={form.altPhone} onChange={altPhone => setForm({ ...form, altPhone })} placeholder="+91 98765 43210" /></div><div className="form-field"><label>Address</label><textarea value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} placeholder="House number, street, area" /></div><Field label="Landmark / nearby place" value={form.landmark} onChange={landmark => setForm({ ...form, landmark })} placeholder="Near school, temple, main road" /><div className="form-row"><Field label="City" value={form.city} onChange={city => setForm({ ...form, city })} placeholder="Mumbai" /><Field label="State" value={form.state} onChange={state => setForm({ ...form, state })} placeholder="Maharashtra" /></div><div className="form-row"><Field label="Pincode" value={form.pincode} onChange={pincode => setForm({ ...form, pincode })} placeholder="400050" /><Field label="Country" value={form.country} onChange={country => setForm({ ...form, country })} placeholder="India" /></div><div className="payment-choice"><div className="sec-label">Payment</div><div className="payment-choice-title">Choose payment method</div><div className="payment-options"><button type="button" className={form.paymentMethod === 'Cash on delivery' ? 'active' : ''} onClick={() => selectPayment('Cash on delivery')}><i className="ti ti-cash" /><span>Cash on delivery</span><small>Pay when your order arrives</small></button><button type="button" className={form.paymentMethod === 'Online payment' ? 'active' : ''} onClick={() => selectPayment('Online payment')}><i className="ti ti-credit-card" /><span>Online payment</span><small>UPI, card, netbanking</small></button></div><div className="payment-note">{form.paymentMethod === 'Cash on delivery' ? 'Your order will be confirmed first. Payment is collected at delivery.' : 'Add a payment reference for your order. No payment is taken on this website.'}</div>{form.paymentMethod === 'Online payment' && <div className="form-field"><label>Payment method</label><select value={form.paymentDetails.type} onChange={event => setForm({ ...form, paymentDetails: { type: event.target.value, value: '' } })}><option value="UPI">UPI</option><option value="Card">Card</option><option value="Netbanking">Netbanking</option></select><Field label={form.paymentDetails.type === 'UPI' ? 'UPI ID' : form.paymentDetails.type === 'Card' ? 'Last 4 card digits' : 'Bank name'} value={form.paymentDetails.value} onChange={value => setForm({ ...form, paymentDetails: { ...form.paymentDetails, value } })} placeholder={form.paymentDetails.type === 'UPI' ? 'name@bank' : form.paymentDetails.type === 'Card' ? '1234' : 'Your bank'} /><small className="field-hint">This is only an order reference. Do not enter a card number, CVV, OTP, or UPI PIN.</small></div>}</div><div className="account-actions"><button className="btn-gold" onClick={submit}>{actionLabel}</button><button className="btn-outline-dark" onClick={() => showPage('kids')}>Continue shopping</button></div></div><div className="checkout-card"><div className="sec-label">Summary</div><div className="sec-title" style={{ marginBottom: 24 }}>Order total</div><div className="checkout-items">{cart.map(item => <div className="checkout-row" key={`${item.id}-${item.size || 'size'}`}><div><div className="cart-name">{item.name}</div><div className="cart-meta">{item.meta} · Size {item.size || 'Not selected'} · Qty {item.qty}</div></div><div className="cart-name">{price(item.price * item.qty)}</div></div>)}</div><div className="coupon-box"><label htmlFor="coupon-code">Coupon code</label><div><input id="coupon-code" value={couponInput} onChange={event => setCouponInput(event.target.value)} placeholder="WELCOME10" /><button className="btn-outline-dark" onClick={applyCoupon}>Apply</button></div><small>Use WELCOME10 to save 10%, up to ₹150.</small></div><div className="checkout-totals"><div><span>Payment</span><strong>{form.paymentMethod}</strong></div><div><span>Subtotal</span><strong>{price(totals.subtotal)}</strong></div>{totals.discount > 0 && <div><span>Discount ({totals.coupon})</span><strong>-{price(totals.discount)}</strong></div>}<div><span>Shipping</span><strong>{totals.shipping ? price(totals.shipping) : 'Free'}</strong></div><div className="checkout-grand"><span>Total</span><strong>{price(totals.total)}</strong></div></div></div></div></section>
   </main>;
 }
 
