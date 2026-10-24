@@ -33,7 +33,7 @@ $env:VITE_API_URL = "https://your-myeonn-api.example.com"
 npm run build
 ```
 
-`MYSQL_URL` is a server secret. Never add it to the React app, GitHub, or Firebase Hosting settings. The browser only talks to the Node API, and the Node API talks to MySQL.
+`MYSQL_URL` is a server secret. Never add it to the React app or GitHub. The browser only talks to the Node API, and the Node API talks to MySQL.
 
 ## Payment Details
 
@@ -75,10 +75,6 @@ The admin dashboard shows stock details and every checkout order. Product stock 
 - `data/admin-sessions.json`: active admin login sessions.
 
 These are used only when `MYSQL_URL` is not set. On its first MySQL connection, the backend imports the existing contents as starter data.
-
-## Hosting
-
-Firebase Hosting may continue to host the static React build in `dist/`. It does not host the Node API or MySQL database. Host the Node API separately, set `CORS_ORIGIN` to your storefront URL, set `COOKIE_SECURE=true`, then build the frontend with the API URL as `VITE_API_URL`.
 
 ## Frontend
 

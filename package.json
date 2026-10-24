@@ -8,10 +8,7 @@
     "backend": "node server.js",
     "dev": "vite --host 127.0.0.1",
     "build": "vite build",
-    "build:pages": "vite build --base=/MYEONN/",
-    "start": "node server.js",
-    "firebase:deploy": "firebase deploy",
-    "firebase:deploy:site": "npm run build && firebase deploy --only hosting"
+    "start": "node server.js"
   },
   "dependencies": {
     "@vitejs/plugin-react": "^5.0.0",
