@@ -36,7 +36,10 @@ jobs:
         run: npm ci
 
       - name: Build website
-        run: npm run build:pages
+        env:
+          VITE_BASE_PATH: /MYEONN/
+          VITE_API_URL: ${{ vars.MYEONN_API_URL }}
+        run: npm run build
 
       - name: Setup GitHub Pages
         uses: actions/configure-pages@v5

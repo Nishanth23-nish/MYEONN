@@ -35,6 +35,16 @@ npm run build
 
 `MYSQL_URL` is a server secret. Never add it to the React app or GitHub. The browser only talks to the Node API, and the Node API talks to MySQL.
 
+## GitHub Pages Connection
+
+GitHub Pages hosts only the React frontend. It cannot connect directly to a MySQL server on your computer.
+
+1. Deploy this Node backend to a public Node.js host.
+2. Use a public MySQL database and add its connection string as the host's `MYSQL_URL` environment variable.
+3. Set the host's `CORS_ORIGIN` to `https://nishanth23-nish.github.io` and `COOKIE_SECURE` to `true`.
+4. In the GitHub repository, create an Actions variable named `MYEONN_API_URL` with the public backend URL, for example `https://myeonn-api.example.com`.
+5. Push to `main`. The GitHub Pages workflow builds the storefront with that API URL automatically.
+
 ## Payment Details
 
 The online payment option collects a simple payment reference (UPI ID, last four card digits, or bank name) and then places the order. It does not process or charge a real payment. Customers must never enter a full card number, CVV, OTP, or UPI PIN.

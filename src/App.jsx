@@ -47,7 +47,8 @@ function slugify(value) {
 }
 
 function productFromForm(form) {
-  const id = slugify(form.id || form.name);
+  // Preserve an existing ID exactly so older products with mixed-case IDs update in place.
+  const id = String(form.id || '').trim() || slugify(form.name);
   const images = Array.isArray(form.images) ? form.images.filter(Boolean) : String(form.images || '').split('\n').map(item => item.trim()).filter(Boolean);
   const tags = Array.isArray(form.tags) ? form.tags.filter(Boolean) : String(form.tags || '').split(',').map(item => item.trim()).filter(Boolean);
   return {
@@ -638,7 +639,7 @@ function AdminPage({ admin, products, setProducts, setAdmin, setUser, showPage, 
       const saved = await api('/api/admin/products', { method: 'POST', body: JSON.stringify(product) });
       setProducts(items => {
         const normalized = normalizeProducts([saved])[0];
-        return items.some(item => item.id === normalized.id) ? items.map(item => item.id === normalized.id ? normalized : item) : [normalized, ...items];
+        return [normalized, ...items.filter(item => String(item.id || '').toLowerCase() !== String(normalized.id || '').toLowerCase())];
       });
       setEditingProduct(null);
       setToast(`${saved.name} saved to products.`);
@@ -653,11 +654,22 @@ function AdminPage({ admin, products, setProducts, setAdmin, setUser, showPage, 
     setActiveSection('add-product');
   };
 
+  const removeProduct = async product => {
+    if (!window.confirm(`Remove ${product.name} from your store? This cannot be undone.`)) return;
+    try {
+      await api(`/api/admin/products/${encodeURIComponent(product.id)}`, { method: 'DELETE' });
+      setProducts(items => items.filter(item => item.id !== product.id));
+      setToast(`${product.name} removed from products.`);
+    } catch (error) {
+      setToast(error.message);
+    }
+  };
+
   if (!admin) {
     return <main className="page active"><section className="contact-hero"><div className="sec-label" style={{ color: '#D4AF82', textAlign: 'center' }}>Admin</div><h1 className="hero-h1" style={{ color: '#F5F0E8', textAlign: 'center', fontSize: 44 }}>Admin login</h1><p style={{ color: '#A89F93', textAlign: 'center', marginTop: 12, fontSize: 14 }}>Sign in here to confirm orders and mark packs as shipped</p></section><section className="sec"><div className="admin-login-card"><div className="sec-label">Order desk</div><div className="sec-title" style={{ marginBottom: 24 }}>Manager access</div><Field label="Admin email" type="email" value={login.email} onChange={email => setLogin({ ...login, email })} placeholder="admin@myeonn.com" /><PasswordField value={login.password} onChange={password => setLogin({ ...login, password })} showing={showPassword} toggle={() => setShowPassword(!showPassword)} placeholder="Admin password" /><div className="account-actions"><button className="btn-gold" onClick={submitLogin}>Login as admin</button><button className="btn-outline-dark" onClick={() => showPage('login')}>Login as user</button></div></div></section></main>;
   }
 
-  return <main className="page active admin-page"><AdminSidebar active={activeSection} setActive={setActiveSection} /><section className="admin-content"><div className="admin-toolbar"><div><div className="sec-label">Seller dashboard</div><div className="admin-name">{admin.name}</div><div className="admin-email">{admin.email}</div></div><div className="account-actions"><button className="btn-outline-dark" onClick={loadOrders}>{loading ? 'Refreshing...' : 'Refresh dashboard'}</button><button className="btn-dark" onClick={logout}>Sign out</button></div></div>{activeSection === 'home' && <AdminHome summary={stockSummary} orders={orders} />}{activeSection === 'listings' && <ListingsPanel rows={stockRows} />}{activeSection === 'add-product' && <AddProductPanel key={editingProduct?.id || 'new-product'} addProduct={addProduct} product={editingProduct} cancelEdit={() => setEditingProduct(null)} />}{activeSection === 'inventory' && <StockDashboard rows={stockRows} summary={stockSummary} editStock={editStock} editProduct={editProduct} />}{activeSection === 'orders' && <OrdersPanel orders={orders} setStatus={setStatus} />}{activeSection === 'payments' && <PaymentsPanel orders={orders} />}{activeSection === 'growth' && <GrowthPanel orders={orders} />}{activeSection === 'reports' && <ReportsPanel orders={orders} rows={stockRows} />}{['ads', 'partner'].includes(activeSection) && <AdminPlaceholder section={activeSection} />}</section></main>;
+  return <main className="page active admin-page"><AdminSidebar active={activeSection} setActive={setActiveSection} /><section className="admin-content"><div className="admin-toolbar"><div><div className="sec-label">Seller dashboard</div><div className="admin-name">{admin.name}</div><div className="admin-email">{admin.email}</div></div><div className="account-actions"><button className="btn-outline-dark" onClick={loadOrders}>{loading ? 'Refreshing...' : 'Refresh dashboard'}</button><button className="btn-dark" onClick={logout}>Sign out</button></div></div>{activeSection === 'home' && <AdminHome summary={stockSummary} orders={orders} />}{activeSection === 'listings' && <ListingsPanel rows={stockRows} />}{activeSection === 'add-product' && <AddProductPanel key={editingProduct?.id || 'new-product'} addProduct={addProduct} product={editingProduct} cancelEdit={() => setEditingProduct(null)} />}{activeSection === 'inventory' && <StockDashboard rows={stockRows} summary={stockSummary} editStock={editStock} editProduct={editProduct} removeProduct={removeProduct} />}{activeSection === 'orders' && <OrdersPanel orders={orders} setStatus={setStatus} />}{activeSection === 'payments' && <PaymentsPanel orders={orders} />}{activeSection === 'growth' && <GrowthPanel orders={orders} />}{activeSection === 'reports' && <ReportsPanel orders={orders} rows={stockRows} />}{['ads', 'partner'].includes(activeSection) && <AdminPlaceholder section={activeSection} />}</section></main>;
 }
 
 function AdminSidebar({ active, setActive }) {
@@ -736,9 +748,9 @@ function ListingsPanel({ rows }) {
   return <div><div className="admin-section-title"><div><div className="sec-label">Listings</div><div className="sec-title">Product listings</div></div></div><div className="listing-table"><div className="listing-row listing-head"><span>Product</span><span>Collection</span><span>Category</span><span>Price</span><span>Stock</span></div>{rows.map(product => <div className="listing-row" key={product.id}><span><strong>{product.name}</strong><small>{product.id}</small></span><span>{product.collection}</span><span>{product.category}</span><span>{price(product.price)}</span><span>{product.available} available</span></div>)}</div></div>;
 }
 
-function StockDashboard({ rows, summary, editStock, editProduct }) {
+function StockDashboard({ rows, summary, editStock, editProduct, removeProduct }) {
   const cards = [['Listed products', summary.totalProducts], ['Units in stock', summary.available], ['Low stock', summary.low], ['Out of stock', summary.out], ['Units sold', summary.sold]];
-  return <div className="stock-dashboard"><div className="admin-section-title"><div><div className="sec-label">Inventory</div><div className="sec-title">Stock details</div></div></div><div className="stock-metrics">{cards.map(card => <div className="stock-metric" key={card[0]}><span>{card[0]}</span><strong>{card[1]}</strong></div>)}</div>{summary.low + summary.out > 0 && <div className="stock-alert"><i className="ti ti-alert-triangle" /> Low stock alert: {summary.low + summary.out} product{summary.low + summary.out === 1 ? '' : 's'} need attention.</div>}<div className="stock-table"><div className="stock-row stock-head"><span>Product</span><span>Category</span><span>Opening</span><span>Sold</span><span>Available</span><span>Status</span><span>Action</span></div>{rows.map(item => <div className="stock-row" key={item.id}><span><strong>{item.name}</strong><small>{item.id}</small></span><span>{item.collection} · {item.category}</span><span>{item.opening}</span><span>{item.sold}</span><span>{item.available}</span><span><b className={`stock-status stock-${item.status}`}>{item.status === 'ready' ? 'In stock' : item.status === 'low' ? 'Low stock' : 'Out'}</b></span><span className="stock-actions"><button className="stock-edit-btn" onClick={() => editStock(item)}>Edit stock</button><button className="stock-edit-btn" onClick={() => editProduct(item)}>Edit product</button></span></div>)}</div></div>;
+  return <div className="stock-dashboard"><div className="admin-section-title"><div><div className="sec-label">Inventory</div><div className="sec-title">Stock details</div></div></div><div className="stock-metrics">{cards.map(card => <div className="stock-metric" key={card[0]}><span>{card[0]}</span><strong>{card[1]}</strong></div>)}</div>{summary.low + summary.out > 0 && <div className="stock-alert"><i className="ti ti-alert-triangle" /> Low stock alert: {summary.low + summary.out} product{summary.low + summary.out === 1 ? '' : 's'} need attention.</div>}<div className="stock-table"><div className="stock-row stock-head"><span>Product</span><span>Category</span><span>Opening</span><span>Sold</span><span>Available</span><span>Status</span><span>Action</span></div>{rows.map(item => <div className="stock-row" key={item.id}><span><strong>{item.name}</strong><small>{item.id}</small></span><span>{item.collection} · {item.category}</span><span>{item.opening}</span><span>{item.sold}</span><span>{item.available}</span><span><b className={`stock-status stock-${item.status}`}>{item.status === 'ready' ? 'In stock' : item.status === 'low' ? 'Low stock' : 'Out'}</b></span><span className="stock-actions"><button className="stock-edit-btn" onClick={() => editStock(item)}>Edit stock</button><button className="stock-edit-btn" onClick={() => editProduct(item)}>Edit product</button><button className="stock-remove-btn" onClick={() => removeProduct(item)}>Remove product</button></span></div>)}</div></div>;
 }
 
 function OrdersPanel({ orders, setStatus }) {

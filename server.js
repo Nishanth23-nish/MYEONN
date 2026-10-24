@@ -67,7 +67,7 @@ async function readBody(req) {
   let size = 0;
   for await (const chunk of req) {
     size += chunk.length;
-    if (size > 1_000_000) throw new Error('Request body is too large');
+    if (size > 6_000_000) throw new Error('Product update is too large. Use up to five compressed product images.');
     chunks.push(chunk);
   }
   if (!chunks.length) return {};
@@ -454,7 +454,14 @@ async function createAdminProduct(req, res) {
   if (!Number.isInteger(stock) || stock < 0) return sendError(res, 400, 'Stock must be a whole number.');
 
   const products = await readArrayJson('products.json');
-  const id = slugify(body.id || name);
+  const requestedId = String(body.id || '').trim() || slugify(name);
+  const matchingIndexes = products.reduce((indexes, item, index) => {
+    if (String(item.id || '').toLowerCase() === requestedId.toLowerCase()) indexes.push(index);
+    return indexes;
+  }, []);
+  const existing = matchingIndexes.length ? products[matchingIndexes[0]] : null;
+  const id = existing?.id || requestedId;
+  const now = new Date().toISOString();
   const product = {
     id,
     name,
@@ -466,17 +473,33 @@ async function createAdminProduct(req, res) {
     images: Array.isArray(body.images) ? body.images.map(item => String(item).trim()).filter(Boolean) : [],
     tags: Array.isArray(body.tags) ? body.tags.map(item => String(item).trim()).filter(Boolean) : [],
     stock,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    createdAt: existing?.createdAt || now,
+    updatedAt: now,
     updatedBy: publicAdmin(admin)
   };
 
-  const existingIndex = products.findIndex(item => item.id === id);
-  if (existingIndex >= 0) products[existingIndex] = { ...products[existingIndex], ...product };
-  else products.unshift(product);
+  if (matchingIndexes.length) {
+    const remaining = products.filter((_, index) => !matchingIndexes.includes(index));
+    remaining.splice(matchingIndexes[0], 0, { ...existing, ...product });
+    await writeJson('products.json', remaining);
+  } else {
+    products.unshift(product);
+    await writeJson('products.json', products);
+  }
 
-  await writeJson('products.json', products);
   send(res, 201, publicProduct(product));
+}
+
+async function deleteAdminProduct(req, res, productId) {
+  const admin = await currentAdmin(req);
+  if (!admin) return sendError(res, 401, 'Admin login is required.');
+
+  const products = await readArrayJson('products.json');
+  const product = products.find(item => item.id === productId);
+  if (!product) return sendError(res, 404, 'Product not found.');
+
+  await writeJson('products.json', products.filter(item => item.id !== productId));
+  send(res, 200, { ok: true, id: productId, name: product.name });
 }
 
 async function createMessage(req, res) {
@@ -568,11 +591,12 @@ async function route(req, res) {
   const url = new URL(req.url, `http://${req.headers.host}`);
   const adminOrderStatus = url.pathname.match(/^\/api\/admin\/orders\/([^/]+)\/status$/);
   const adminProductStock = url.pathname.match(/^\/api\/admin\/products\/([^/]+)\/stock$/);
+  const adminProduct = url.pathname.match(/^\/api\/admin\/products\/([^/]+)$/);
 
   if (req.method === 'OPTIONS') {
     res.writeHead(204, {
       ...corsHeaders(),
-      'Access-Control-Allow-Methods': 'GET, POST, PATCH, OPTIONS',
+      'Access-Control-Allow-Methods': 'GET, POST, PATCH, DELETE, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type'
     });
     return res.end();
@@ -599,6 +623,7 @@ async function route(req, res) {
   }
   if (req.method === 'GET' && url.pathname === '/api/admin/orders') return listAdminOrders(req, res);
   if (req.method === 'POST' && url.pathname === '/api/admin/products') return createAdminProduct(req, res);
+  if (req.method === 'DELETE' && adminProduct) return deleteAdminProduct(req, res, decodeURIComponent(adminProduct[1]));
   if (req.method === 'POST' && url.pathname === '/api/orders') return createOrder(req, res);
   if (req.method === 'POST' && url.pathname === '/api/contact') return createMessage(req, res);
   if (req.method === 'POST' && url.pathname === '/api/newsletter') return createSubscriber(req, res);
